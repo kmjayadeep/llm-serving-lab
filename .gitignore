@@ -1,0 +1,25 @@
+.env
+.env.*
+!.env.example
+
+# Models and caches
+.cache/
+huggingface/
+models/
+*.safetensors
+*.gguf
+
+# Secrets and cluster credentials
+*.token
+*.key
+kubeconfig*
+
+# Local benchmark output
+results/private/
+
+# Editors and OS
+.direnv/
+.envrc
+.vscode/
+.idea/
+.DS_Store

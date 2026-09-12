@@ -1,0 +1,33 @@
+services:
+  vllm:
+    image: ${VLLM_IMAGE:-rocm/vllm-dev:rocm7.2.1_navi_ubuntu24.04_py3.12_pytorch_2.9_vllm_0.16.0}
+    container_name: vllm-lab
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+    ipc: host
+    network_mode: host
+    environment:
+      HIP_VISIBLE_DEVICES: ${HIP_VISIBLE_DEVICES:-0}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - >-
+        exec vllm serve ${MODEL_ID:-Qwen/Qwen2.5-0.5B-Instruct}
+        --served-model-name ${SERVED_MODEL_NAME:-Qwen/Qwen2.5-0.5B-Instruct}
+        --dtype ${DTYPE:-float16}
+        --max-model-len ${MAX_MODEL_LEN:-2048}
+        --gpu-memory-utilization ${GPU_MEMORY_UTILIZATION:-0.75}
+        --port ${PORT:-8000}
+        --enforce-eager
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:${PORT:-8000}/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: "no"
