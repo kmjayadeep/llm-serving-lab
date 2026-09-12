@@ -47,27 +47,6 @@ docker compose logs -f vllm
 PROMPT='Explain KV caching in two sentences.' ./scripts/test-api.sh
 ```
 
-## Change models
-
-Edit `.env`:
-
-```dotenv
-MODEL_ID=Qwen/Qwen2.5-1.5B-Instruct
-SERVED_MODEL_NAME=qwen-1.5b
-```
-
-Then recreate the container:
-
-```bash
-docker compose up -d --force-recreate
-```
-
-Check model VRAM requirements and license first. Larger models and contexts leave less capacity for KV cache and concurrent requests.
-
-## Test optimized execution
-
-The baseline uses `--enforce-eager`. To test graph/compiled execution, remove that line from `compose.yaml`, recreate the container, and compare the same prompt/concurrency workload. Restore eager mode if ROCm/Triton compilation fails.
-
 ## Troubleshooting
 
 ### No `/dev/kfd`

@@ -1,108 +1,117 @@
 # LLM Serving Lab
 
-A hands-on lab for learning local and clustered LLM inference: **vLLM**, **ROCm**, containers, Kubernetes, and **llm-d**. The long-term goal is to move experiments from a desktop AMD GPU to a dedicated GPU homelab.
+A small, incremental learning repository for experimenting with LLM inference and serving.
 
-> This is a learning repository, not a production-ready serving platform. Images, flags, and hardware support change quickly; pin versions and revalidate before each experiment.
+The repository currently documents only the first completed experiment: running a small model with vLLM and ROCm on an AMD Radeon RX 7900 GRE.
 
-## Current status
+## What has been tested
 
-The first experiment successfully served `Qwen/Qwen2.5-0.5B-Instruct` with vLLM on an AMD Radeon RX 7900 GRE:
+- AMD Radeon RX 7900 GRE (`gfx1100`) with 16 GiB VRAM
+- NixOS host with the `amdgpu` kernel driver
+- GPU access from a Docker container through `/dev/kfd` and `/dev/dri`
+- ROCm 7.2.1 and ROCm-enabled PyTorch
+- vLLM serving `Qwen/Qwen2.5-0.5B-Instruct`
+- OpenAI-compatible chat-completions API on port 8000
+- Explicit selection of the discrete GPU instead of the integrated AMD GPU
+- Complete cleanup after the experiment
 
-- AMD Navi 31 / `gfx1100`, 16 GiB VRAM
-- NixOS host using the `amdgpu` kernel driver
-- ROCm 7.2.1 and vLLM 0.16 development image
-- OpenAI-compatible endpoint on `http://localhost:8000`
-- FP16, 2,048-token context, eager execution
+The exact observations are in [`docs/01-rx7900gre-first-vllm-run.md`](docs/01-rx7900gre-first-vllm-run.md).
 
-See [the first session notes](docs/01-rx7900gre-first-vllm-run.md) and its [captured artifacts](artifacts/2026-09-rx7900gre/).
-
-## Repository map
+## Repository contents
 
 ```text
 .
-├── artifacts/                  # Sanitized outputs and observations from experiments
-├── docs/                       # Concept notes and architecture learning
-├── guides/                     # Repeatable procedures
-├── kubernetes/base/            # Educational single-node Kubernetes baseline
-├── scripts/                    # GPU checks, launch, API test, cleanup
-├── compose.yaml                # Local ROCm/vLLM experiment
-└── .env.example                # Tunable local settings
+├── artifacts/                  # Sanitized output from the completed experiment
+├── docs/
+│   ├── 01-rx7900gre-first-vllm-run.md
+│   ├── 02-inference-fundamentals.md
+│   ├── 03-vllm-and-rocm.md
+│   ├── 04-containers-and-storage.md
+│   └── references.md
+├── guides/
+│   └── local-rocm-vllm.md      # Procedure for repeating the experiment
+├── scripts/                    # Host checks, verification, API test, and cleanup
+├── compose.yaml                # Reusable form of the tested Docker configuration
+└── .env.example                # Local experiment settings
 ```
 
-## Quick start: AMD ROCm
+The Compose configuration was derived from the successful `docker run` experiment and validated with `docker compose config`. Re-running it is the next local exercise.
 
-### 1. Check the host
+## Read slowly
+
+Use this order:
+
+1. [`docs/01-rx7900gre-first-vllm-run.md`](docs/01-rx7900gre-first-vllm-run.md) — what was done
+2. [`docs/02-inference-fundamentals.md`](docs/02-inference-fundamentals.md) — only the concepts seen in that run
+3. [`docs/03-vllm-and-rocm.md`](docs/03-vllm-and-rocm.md) — how the AMD software stack fits together
+4. [`docs/04-containers-and-storage.md`](docs/04-containers-and-storage.md) — what Docker provided
+5. [`guides/local-rocm-vllm.md`](guides/local-rocm-vllm.md) — how to repeat it
+6. [`docs/references.md`](docs/references.md) — primary sources
+
+There is no need to understand all of these files at once. Start with the session note and ask one question at a time.
+
+## Repeat the local experiment
+
+Check the host:
 
 ```bash
 ./scripts/check-amd-gpu.sh
 ```
 
-You need an AMD GPU supported by the selected ROCm image, the `amdgpu` driver, `/dev/kfd`, `/dev/dri`, and Docker Compose.
-
-### 2. Review storage first
-
-The tested development image is very large. Keep at least **70–100 GiB free** before pulling it:
-
-```bash
-df -h /
-docker system df
-```
-
-### 3. Configure and launch
+Prepare local configuration:
 
 ```bash
 cp .env.example .env
-# Review .env, particularly HIP_VISIBLE_DEVICES and the model.
+$EDITOR .env
+```
+
+Pull and verify the ROCm image:
+
+```bash
+docker compose pull
+./scripts/verify-rocm-container.sh
+```
+
+Start and test vLLM:
+
+```bash
 docker compose up -d
 ./scripts/wait-for-server.sh
 ./scripts/test-api.sh
 ```
 
-Follow logs:
+View logs:
 
 ```bash
 docker compose logs -f vllm
 ```
 
-Stop while preserving the image and model cache:
+Stop it:
 
 ```bash
 docker compose down
 ```
 
-Remove this lab's container, image, and selected model cache:
+Use [`scripts/cleanup.sh`](scripts/cleanup.sh) for targeted cleanup of this lab's resources.
 
-```bash
-./scripts/cleanup.sh
-```
+## Next steps — not implemented yet
 
-The cleanup script is deliberately targeted; it does not run a system-wide `docker system prune`.
+These are intentionally only TODOs. They should be added one at a time after the current local setup is understood and reproduced.
 
-## Learning path
+- [ ] Re-run and document the Compose workflow
+- [ ] Learn how to measure one request's latency and tokens per second
+- [ ] Compare the 0.5B model with one slightly larger model
+- [ ] Learn basic concurrent-request behavior
+- [ ] Add a minimal benchmark script after the measurements are understood
+- [ ] Learn what Kubernetes contributes to model serving
+- [ ] Try one minimal Kubernetes vLLM deployment
+- [ ] Learn the purpose of llm-d
+- [ ] Plan a dedicated GPU homelab node
 
-1. [Inference fundamentals](docs/02-inference-fundamentals.md)
-2. [vLLM and ROCm](docs/03-vllm-and-rocm.md)
-3. [Container storage and GPU access](docs/04-containers-and-storage.md)
-4. [Kubernetes model serving](docs/05-kubernetes-serving.md)
-5. [llm-d concepts](docs/06-llm-d.md)
-6. [Homelab roadmap](docs/07-homelab-roadmap.md)
-7. [References](docs/references.md)
+Kubernetes, llm-d, distributed serving, autoscaling, and production architecture are outside the current scope.
 
-## Planned experiments
+## Safety
 
-- Compare eager mode with compiled/graph execution on `gfx1100`
-- Benchmark 0.5B, 1.5B, and 3B models
-- Measure time-to-first-token and inter-token latency
-- Compare FP16 with supported quantization formats
-- Build or locate a smaller ROCm runtime image
-- Deploy a single vLLM pod with the AMD Kubernetes device plugin
-- Add observability with Prometheus and Grafana
-- Explore inference-aware routing and disaggregated serving with llm-d
-- Move repeatable workloads to a dedicated homelab GPU node
-
-## Safety and expectations
-
-- Do not commit Hugging Face tokens, kubeconfigs, model weights, or private prompts.
-- Verify model licenses before downloading or redistributing weights.
-- Treat manifests under `kubernetes/` as educational baselines.
-- Never expose an unauthenticated vLLM endpoint directly to the internet.
+- Do not commit Hugging Face tokens, model weights, kubeconfigs, or private prompts.
+- Check a model's license before downloading or distributing it.
+- Do not expose an unauthenticated vLLM endpoint to an untrusted network.

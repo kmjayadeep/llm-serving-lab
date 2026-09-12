@@ -77,29 +77,4 @@ A configuration optimized for single-user latency may differ from one optimized 
 
 Static batching waits for a fixed batch. Continuous or iteration-level batching can insert and remove requests between decode iterations. vLLM uses scheduling and memory management to improve accelerator utilization across requests.
 
-## Parallelism
-
-Larger serving deployments may use:
-
-- **Tensor parallelism:** split tensor operations across devices
-- **Pipeline parallelism:** place model stages on different devices
-- **Data parallelism:** replicate models and distribute requests
-- **Expert parallelism:** distribute experts in mixture-of-experts models
-- **Disaggregated prefill/decode:** use different workers for the two phases
-
-Each adds communication and operational complexity. Begin with one model on one GPU and measure before scaling.
-
-## Model server versus serving platform
-
-A model server such as vLLM loads models and handles inference requests. A serving platform adds concerns such as:
-
-- Scheduling and placement
-- Autoscaling
-- Routing and load balancing
-- Model artifact distribution
-- Fault tolerance
-- Metrics and tracing
-- Authentication and policy
-- Multi-tenancy
-
-Kubernetes, KServe, Gateway API, and llm-d operate at different portions of this broader platform layer.
+Those are the concepts directly relevant to the first run. Parallelism, orchestration, distributed serving, and platform architecture are intentionally deferred.

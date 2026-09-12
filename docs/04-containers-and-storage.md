@@ -77,15 +77,4 @@ docker volume prune
 
 They can delete unrelated inactive images, build cache, and—depending on flags—volumes. Inspect first and use them only when that scope is intentional.
 
-## Long-term storage options
-
-For a homelab, consider:
-
-- A dedicated SSD/filesystem for container data
-- A dedicated model cache volume
-- Registry mirrors or a local registry
-- Read-only model volumes shared by replicas
-- Object storage or artifact repositories for model distribution
-- Explicit retention policies for benchmark outputs and caches
-
-Docker's `data-root` can be relocated, but do so through daemon configuration and a deliberate migration rather than moving live overlay directories manually.
+More advanced storage design is deferred until the local experiment has been repeated and understood.

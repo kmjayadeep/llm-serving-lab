@@ -1,4 +1,4 @@
-.PHONY: check verify pull up wait test logs down cleanup render-k8s
+.PHONY: check verify pull up wait test logs down cleanup
 
 check:
 	./scripts/check-amd-gpu.sh
@@ -26,6 +26,3 @@ down:
 
 cleanup:
 	./scripts/cleanup.sh
-
-render-k8s:
-	kubectl kustomize kubernetes/base
