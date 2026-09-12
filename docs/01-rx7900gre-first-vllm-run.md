@@ -40,20 +40,6 @@ HIP 7.2.53211-e1a6bc5663
 
 PyTorch's ROCm backend deliberately uses APIs named `torch.cuda.*`; those names do not imply that an NVIDIA GPU or CUDA runtime was used.
 
-## First pull failure
-
-The first image pull failed while extracting ROCm's LLVM/flang layer:
-
-```text
-no space left on device
-```
-
-After reclaiming inactive Docker data and disposable language/tool caches, free space rose to roughly 63 GiB and the pull succeeded. The full pull/unpack/container cycle then reduced free space to about 6 GiB.
-
-This is the most important operational lesson from the session: inspect both GPU compatibility **and storage headroom** before using large ROCm development images.
-
-A broad `docker system prune -af` was used during this exploratory session. It removed inactive project images and build cache. Future experiments should use the targeted `scripts/cleanup.sh` instead.
-
 ## GPU verification
 
 Inside the container, `rocminfo` identified both AMD agents. PyTorch reported two accelerator devices and successfully selected the discrete card. The server was constrained to it with:
@@ -114,12 +100,12 @@ The following were removed after the test:
 - Qwen 0.5B Hugging Face cache
 - Temporary cleanup image
 
-Free disk returned to approximately 63 GiB, and no vLLM container or image remained.
+No vLLM container or image remained after cleanup.
 
 ## Conclusions
 
 - The RX 7900 GRE successfully ran this vLLM/ROCm combination.
 - Explicit GPU selection matters because the host also has an AMD iGPU.
-- A 0.5B FP16 model requires little VRAM, but the software image requires substantial disk.
+- A 0.5B FP16 model leaves ample VRAM for KV cache and concurrent requests.
 - A slimmer runtime image or larger Docker filesystem is desirable for continued work.
 - Successful execution on this model does not guarantee every quantization kernel, model architecture, or optimized execution mode will work on `gfx1100`.

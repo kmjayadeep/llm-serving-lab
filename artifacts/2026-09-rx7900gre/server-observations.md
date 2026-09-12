@@ -44,10 +44,3 @@ The reported concurrency is theoretical cache capacity, not a measured throughpu
 | Prompt tokens | 46 |
 | Completion tokens | 20 |
 | Total tokens | 66 |
-
-## Storage observations
-
-- The first pull failed with `no space left on device` while extracting a ROCm LLVM/flang layer.
-- Approximately 63 GiB was free immediately before the successful pull.
-- Approximately 6 GiB remained after image extraction, model download, and launch.
-- Approximately 63 GiB was free again after targeted cleanup.

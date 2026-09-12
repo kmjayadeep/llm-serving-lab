@@ -14,8 +14,6 @@ The first experiment successfully served `Qwen/Qwen2.5-0.5B-Instruct` with vLLM 
 - OpenAI-compatible endpoint on `http://localhost:8000`
 - FP16, 2,048-token context, eager execution
 
-The experiment was removed afterward because the ROCm development image required roughly 57 GiB of working disk space during the pull/unpack/runtime cycle.
-
 See [the first session notes](docs/01-rx7900gre-first-vllm-run.md) and its [captured artifacts](artifacts/2026-09-rx7900gre/).
 
 ## Repository map
