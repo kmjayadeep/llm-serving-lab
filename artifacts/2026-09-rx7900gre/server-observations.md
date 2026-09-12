@@ -1,0 +1,53 @@
+# Server observations
+
+Captured and sanitized during the first experiment on 2026-09-12.
+
+## Software
+
+| Component | Version or value |
+|---|---|
+| Image | `rocm/vllm-dev:rocm7.2.1_navi_ubuntu24.04_py3.12_pytorch_2.9_vllm_0.16.0` |
+| Reported vLLM build | `0.16.1.dev0+g89a77b108.d20260317` |
+| Model | `Qwen/Qwen2.5-0.5B-Instruct` |
+
+## Configuration
+
+```text
+dtype=float16
+max_model_len=2048
+gpu_memory_utilization=0.75
+enforce_eager=true
+HIP_VISIBLE_DEVICES=0
+```
+
+## Selected log observations
+
+```text
+Resolved architecture: Qwen2ForCausalLM
+Casting torch.bfloat16 to torch.float16
+Using Triton Attention backend
+Model loading took 0.99 GiB memory
+Available KV cache memory: 9.25 GiB
+GPU KV cache size: 808,192 tokens
+Maximum concurrency for 2,048 tokens per request: 394.62x
+Application startup complete
+```
+
+The reported concurrency is theoretical cache capacity, not a measured throughput result.
+
+## API result
+
+`POST /v1/chat/completions` returned HTTP success and a valid chat completion:
+
+| Metric | Value |
+|---|---:|
+| Prompt tokens | 46 |
+| Completion tokens | 20 |
+| Total tokens | 66 |
+
+## Storage observations
+
+- The first pull failed with `no space left on device` while extracting a ROCm LLVM/flang layer.
+- Approximately 63 GiB was free immediately before the successful pull.
+- Approximately 6 GiB remained after image extraction, model download, and launch.
+- Approximately 63 GiB was free again after targeted cleanup.
