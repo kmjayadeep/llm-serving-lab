@@ -51,8 +51,23 @@ Open [http://localhost:3001](http://localhost:3001).
 - Supports temperature and maximum-token controls
 - Clears the current in-memory conversation
 - Displays approximate browser-observed time to first token, total time, and output tokens per second
+- Polls vLLM's Prometheus endpoint for running/waiting requests, KV-cache use, token counters, completed requests, and errors
+- Shows both cumulative and per-request prefix-cache hit rates
 
 Conversation history exists only in the current page. Reloading or pressing **New chat** clears it.
+
+## Prefix-cache metrics
+
+vLLM exports token counters through `/metrics`:
+
+```text
+vllm:prefix_cache_queries_total
+vllm:prefix_cache_hits_total
+```
+
+The server panel calculates cumulative hit rate since startup as `hits / queries`. For the last chat request, the UI snapshots both counters before and after generation and applies the same calculation to their differences.
+
+The per-request value is approximate if other clients are using the server concurrently. A short prompt can also report that no cacheable prefix was measured because prefix caching operates on token blocks rather than arbitrary individual tokens.
 
 ## Measurement caveat
 

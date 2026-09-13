@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>vLLM Lab Chat</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
   </head>
   <body>
     <main class="app">
@@ -32,6 +32,19 @@
         <span id="status" role="status">Connecting…</span>
       </section>
 
+      <section class="telemetry" aria-label="vLLM server metrics">
+        <div><span>Running</span><strong id="running">–</strong></div>
+        <div><span>Waiting</span><strong id="waiting">–</strong></div>
+        <div><span>KV cache</span><strong id="kv-cache">–</strong></div>
+        <div title="Cumulative cached tokens divided by queried tokens since server startup">
+          <span>Prefix cache hit</span><strong id="prefix-cache">–</strong>
+        </div>
+        <div><span>Prompt tokens</span><strong id="prompt-tokens">–</strong></div>
+        <div><span>Generated tokens</span><strong id="generated-tokens">–</strong></div>
+        <div><span>Finished requests</span><strong id="finished-requests">–</strong></div>
+        <div><span>Errors</span><strong id="errors">–</strong></div>
+      </section>
+
       <section id="messages" class="messages" aria-live="polite">
         <div class="empty">Send a message to the local model.</div>
       </section>
@@ -44,6 +57,6 @@
 
       <footer id="metrics">No request metrics yet.</footer>
     </main>
-    <script src="app.js"></script>
+    <script src="app.js?v=2"></script>
   </body>
 </html>

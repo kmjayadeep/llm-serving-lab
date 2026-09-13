@@ -62,6 +62,24 @@ input, select, textarea {
 #temperature, #max-tokens { width: 100px; }
 #status { margin-left: auto; color: #86efac; }
 
+.telemetry {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  gap: 0.5rem;
+}
+
+.telemetry div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #374151;
+  border-radius: 0.6rem;
+  background: #1f2937;
+}
+
+.telemetry span { color: #9ca3af; font-size: 0.75rem; }
+.telemetry strong { font-size: 1rem; }
+
 .messages {
   min-height: 300px;
   overflow-y: auto;
@@ -104,5 +122,6 @@ footer { color: #9ca3af; font-size: 0.85rem; }
   .app { padding: 0.75rem; }
   #model { min-width: 180px; max-width: 100%; }
   #status { width: 100%; margin-left: 0; }
+  .telemetry { grid-template-columns: repeat(2, 1fr); }
   .message { max-width: 95%; }
 }

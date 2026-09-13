@@ -12,6 +12,14 @@ const elements = {
   maxTokens: document.querySelector("#max-tokens"),
   status: document.querySelector("#status"),
   metrics: document.querySelector("#metrics"),
+  running: document.querySelector("#running"),
+  waiting: document.querySelector("#waiting"),
+  kvCache: document.querySelector("#kv-cache"),
+  prefixCache: document.querySelector("#prefix-cache"),
+  promptTokens: document.querySelector("#prompt-tokens"),
+  generatedTokens: document.querySelector("#generated-tokens"),
+  finishedRequests: document.querySelector("#finished-requests"),
+  errors: document.querySelector("#errors"),
 };
 
 function addBubble(role, content = "") {
@@ -23,6 +31,62 @@ function addBubble(role, content = "") {
   elements.messages.appendChild(bubble);
   elements.messages.scrollTop = elements.messages.scrollHeight;
   return bubble;
+}
+
+function parsePrometheus(text) {
+  const samples = [];
+  for (const line of text.split("\n")) {
+    if (!line || line.startsWith("#")) continue;
+    const match = line.match(/^([^\s{]+)(?:\{([^}]*)\})?\s+([^\s]+)$/);
+    if (!match) continue;
+    const labels = {};
+    for (const label of (match[2] || "").matchAll(/(\w+)="([^"]*)"/g)) {
+      labels[label[1]] = label[2];
+    }
+    samples.push({ name: match[1], labels, value: Number(match[3]) });
+  }
+  return samples;
+}
+
+function metricSum(samples, name, labels = {}) {
+  return samples
+    .filter((sample) => sample.name === name)
+    .filter((sample) => Object.entries(labels).every(([key, value]) => sample.labels[key] === value))
+    .reduce((total, sample) => total + sample.value, 0);
+}
+
+function renderServerMetrics(snapshot) {
+  const format = (value) => Math.round(value).toLocaleString();
+  elements.running.textContent = format(snapshot.running);
+  elements.waiting.textContent = format(snapshot.waiting);
+  elements.kvCache.textContent = `${(snapshot.kvCache * 100).toFixed(1)}%`;
+  elements.prefixCache.textContent = snapshot.queries > 0
+    ? `${(snapshot.hits / snapshot.queries * 100).toFixed(1)}%`
+    : "n/a";
+  elements.promptTokens.textContent = format(snapshot.promptTokens);
+  elements.generatedTokens.textContent = format(snapshot.generatedTokens);
+  elements.finishedRequests.textContent = format(snapshot.finishedRequests);
+  elements.errors.textContent = format(snapshot.errors);
+}
+
+async function fetchServerMetrics(render = true) {
+  const response = await fetch("http://127.0.0.1:8000/metrics");
+  if (!response.ok) throw new Error(`Metrics HTTP ${response.status}`);
+  const samples = parsePrometheus(await response.text());
+  const snapshot = {
+    running: metricSum(samples, "vllm:num_requests_running"),
+    waiting: metricSum(samples, "vllm:num_requests_waiting"),
+    kvCache: metricSum(samples, "vllm:kv_cache_usage_perc"),
+    queries: metricSum(samples, "vllm:prefix_cache_queries_total"),
+    hits: metricSum(samples, "vllm:prefix_cache_hits_total"),
+    promptTokens: metricSum(samples, "vllm:prompt_tokens_total"),
+    generatedTokens: metricSum(samples, "vllm:generation_tokens_total"),
+    finishedRequests: metricSum(samples, "vllm:request_success_total"),
+    errors: metricSum(samples, "vllm:request_success_total", { finished_reason: "error" })
+      + metricSum(samples, "vllm:request_success_total", { finished_reason: "abort" }),
+  };
+  if (render) renderServerMetrics(snapshot);
+  return snapshot;
 }
 
 async function loadModels() {
@@ -44,7 +108,7 @@ async function loadModels() {
   }
 }
 
-async function streamReply() {
+async function streamReply(metricsBefore) {
   const assistant = addBubble("assistant");
   const started = performance.now();
   let firstTokenAt;
@@ -98,7 +162,16 @@ async function streamReply() {
   const ttft = firstTokenAt === undefined ? "n/a" : `${(firstTokenAt - started).toFixed(0)} ms`;
   const elapsedSeconds = (finished - started) / 1000;
   const rate = usage?.completion_tokens ? `${(usage.completion_tokens / elapsedSeconds).toFixed(1)} output tok/s` : "token count unavailable";
-  elements.metrics.textContent = `TTFT: ${ttft} · Total: ${elapsedSeconds.toFixed(2)} s · ${rate}`;
+  let requestCacheRate = "cache metric unavailable";
+  try {
+    const metricsAfter = await fetchServerMetrics();
+    const queried = metricsBefore ? metricsAfter.queries - metricsBefore.queries : 0;
+    const hits = metricsBefore ? metricsAfter.hits - metricsBefore.hits : 0;
+    requestCacheRate = queried > 0 ? `${(hits / queried * 100).toFixed(1)}% request prefix hit` : "no cacheable prefix measured";
+  } catch (_) {
+    // Metrics are optional; a metrics failure must not turn a valid chat into an error.
+  }
+  elements.metrics.textContent = `TTFT: ${ttft} · Total: ${elapsedSeconds.toFixed(2)} s · ${rate} · ${requestCacheRate}`;
 }
 
 elements.form.addEventListener("submit", async (event) => {
@@ -113,7 +186,8 @@ elements.form.addEventListener("submit", async (event) => {
   elements.status.textContent = "Generating…";
 
   try {
-    await streamReply();
+    const metricsBefore = await fetchServerMetrics(false).catch(() => null);
+    await streamReply(metricsBefore);
     elements.status.textContent = "Ready";
   } catch (error) {
     addBubble("error", `Request failed: ${error.message}`);
@@ -139,3 +213,5 @@ elements.clear.addEventListener("click", () => {
 });
 
 loadModels();
+fetchServerMetrics().catch(() => {});
+setInterval(() => fetchServerMetrics().catch(() => {}), 2000);
