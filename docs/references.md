@@ -20,6 +20,12 @@ These are primary references for the local AMD/vLLM experiment. Version-specific
 - [ROCm documentation](https://rocm.docs.amd.com/)
 - [AMD's ROCm vLLM repository](https://github.com/ROCm/vllm)
 
+## Open WebUI
+
+- [Open WebUI documentation](https://docs.openwebui.com/)
+- [vLLM guide for Open WebUI](https://docs.vllm.ai/en/latest/deployment/frameworks/open-webui/)
+- [Open WebUI GitHub repository](https://github.com/open-webui/open-webui)
+
 ## Tested model
 
 - [Qwen2.5-0.5B-Instruct model card](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct)

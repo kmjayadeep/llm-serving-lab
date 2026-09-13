@@ -31,3 +31,21 @@ services:
       retries: 30
       start_period: 60s
     restart: "no"
+
+  open-webui:
+    image: ${OPEN_WEBUI_IMAGE:-ghcr.io/open-webui/open-webui:main}
+    container_name: open-webui
+    depends_on:
+      vllm:
+        condition: service_healthy
+    network_mode: host
+    environment:
+      PORT: ${OPEN_WEBUI_PORT:-3000}
+      OPENAI_API_BASE_URL: http://127.0.0.1:${PORT:-8000}/v1
+      OPENAI_API_KEY: none
+    volumes:
+      - open-webui-data:/app/backend/data
+    restart: "no"
+
+volumes:
+  open-webui-data:

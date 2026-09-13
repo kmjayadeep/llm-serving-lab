@@ -25,7 +25,7 @@ set -a; source .env; set +a
 ./scripts/verify-rocm-container.sh
 ```
 
-The image pull itself is large. After identifying the discrete GPU index, edit `.env`, then start:
+The image pull itself is large. After identifying the discrete GPU index, edit `.env`, then start vLLM and Open WebUI:
 
 ```bash
 docker compose up -d
@@ -33,12 +33,15 @@ docker compose up -d
 ./scripts/test-api.sh
 ```
 
+Open [http://localhost:3000](http://localhost:3000) for browser-based chat. The first account created on a new Open WebUI data volume becomes its local administrator.
+
 Useful checks:
 
 ```bash
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:8000/v1/models | jq .
-docker compose logs -f vllm
+curl -fsS http://localhost:3000/health
+docker compose logs -f vllm open-webui
 ```
 
 ## Try a custom prompt

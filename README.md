@@ -12,6 +12,7 @@ The repository currently documents only the first completed experiment: running 
 - ROCm 7.2.1 and ROCm-enabled PyTorch
 - vLLM serving `Qwen/Qwen2.5-0.5B-Instruct`
 - OpenAI-compatible chat-completions API on port 8000
+- Open WebUI connected to vLLM as a browser-based chat interface
 - Explicit selection of the discrete GPU instead of the integrated AMD GPU
 - Complete cleanup after the experiment
 
@@ -27,15 +28,16 @@ The exact observations are in [`docs/01-rx7900gre-first-vllm-run.md`](docs/01-rx
 │   ├── 02-inference-fundamentals.md
 │   ├── 03-vllm-and-rocm.md
 │   ├── 04-containers-and-storage.md
+│   ├── 05-open-webui.md
 │   └── references.md
 ├── guides/
 │   └── local-rocm-vllm.md      # Procedure for repeating the experiment
 ├── scripts/                    # Host checks, verification, API test, and cleanup
-├── compose.yaml                # Reusable form of the tested Docker configuration
+├── compose.yaml                # vLLM and Open WebUI services
 └── .env.example                # Local experiment settings
 ```
 
-The Compose configuration was derived from the successful `docker run` experiment and validated with `docker compose config`. Re-running it is the next local exercise.
+The Compose workflow has been used to run both vLLM and Open WebUI successfully.
 
 ## Read slowly
 
@@ -45,8 +47,9 @@ Use this order:
 2. [`docs/02-inference-fundamentals.md`](docs/02-inference-fundamentals.md) — only the concepts seen in that run
 3. [`docs/03-vllm-and-rocm.md`](docs/03-vllm-and-rocm.md) — how the AMD software stack fits together
 4. [`docs/04-containers-and-storage.md`](docs/04-containers-and-storage.md) — what Docker provided
-5. [`guides/local-rocm-vllm.md`](guides/local-rocm-vllm.md) — how to repeat it
-6. [`docs/references.md`](docs/references.md) — primary sources
+5. [`docs/05-open-webui.md`](docs/05-open-webui.md) — how the chat interface connects
+6. [`guides/local-rocm-vllm.md`](guides/local-rocm-vllm.md) — how to repeat it
+7. [`docs/references.md`](docs/references.md) — primary sources
 
 There is no need to understand all of these files at once. Start with the session note and ask one question at a time.
 
@@ -72,13 +75,15 @@ docker compose pull
 ./scripts/verify-rocm-container.sh
 ```
 
-Start and test vLLM:
+Start vLLM and Open WebUI, then test the API:
 
 ```bash
 docker compose up -d
 ./scripts/wait-for-server.sh
 ./scripts/test-api.sh
 ```
+
+Open the chat interface at [http://localhost:3000](http://localhost:3000). The first local account becomes the administrator.
 
 View logs:
 
@@ -98,7 +103,8 @@ Use [`scripts/cleanup.sh`](scripts/cleanup.sh) for targeted cleanup of this lab'
 
 These are intentionally only TODOs. They should be added one at a time after the current local setup is understood and reproduced.
 
-- [ ] Re-run and document the Compose workflow
+- [x] Re-run and document the Compose workflow
+- [x] Add a browser chat interface with Open WebUI
 - [ ] Learn how to measure one request's latency and tokens per second
 - [ ] Compare the 0.5B model with one slightly larger model
 - [ ] Learn basic concurrent-request behavior
