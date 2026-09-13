@@ -1,0 +1,6 @@
+scenario,model,concurrency,attempted_requests,successful_requests,failed_requests,error_rate,duration_seconds,requests_per_second,aggregate_output_tokens_per_second,mean_request_output_tokens_per_second,mean_ttft_ms,p50_ttft_ms,p95_ttft_ms,p99_ttft_ms,mean_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms
+c1,Qwen/Qwen2.5-3B-Instruct,1,50,50,0,0.0,253.174,0.197,25.279,25.315,44.296,44.267,45.256,45.537,5063.465,5057.205,5092.906,5456.417
+c2,Qwen/Qwen2.5-3B-Instruct,2,50,50,0,0.0,122.603,0.408,52.201,26.311,75.804,76.144,78.689,81.4,4903.348,4886.534,5010.103,5010.676
+c4,Qwen/Qwen2.5-3B-Instruct,4,50,50,0,0.0,62.732,0.797,102.021,26.764,77.096,77.78,83.023,84.084,4822.452,4813.744,4887.272,4887.896
+c8,Qwen/Qwen2.5-3B-Instruct,8,50,50,0,0.0,34.308,1.457,186.547,26.353,82.89,83.475,89.96,90.364,4901.998,4902.291,4911.788,4912.076
+c16,Qwen/Qwen2.5-3B-Instruct,16,50,50,0,0.0,21.96,2.277,291.44,23.689,296.528,131.056,702.559,703.004,5661.576,5595.945,6011.649,6012.756

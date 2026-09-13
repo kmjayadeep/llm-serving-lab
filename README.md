@@ -39,6 +39,7 @@ Start with:
 5. [Lightweight chat UI](docs/05-lightweight-chat-ui.md)
 6. [Local reproduction guide](guides/local-rocm-vllm.md)
 7. [References](docs/references.md)
+8. [Local vLLM benchmark](bench/README.md)
 
 ## Run
 
@@ -78,6 +79,10 @@ Five requests with 128 input and 128 output tokens at concurrency one:
 | Mean end-to-end latency | 1.24 s |
 
 See [server observations](artifacts/2026-09-rx7900gre/server-observations.md).
+
+The expanded Phase 1 baseline compares the 0.5B and 3B models from concurrency
+1 through 16. See the [benchmark report](artifacts/2026-09-rx7900gre/phase1-baseline.md)
+or open the [interactive visualization](artifacts/2026-09-rx7900gre/phase1-baseline.html).
 
 ## Next steps
 

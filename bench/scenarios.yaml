@@ -1,0 +1,29 @@
+server:
+  endpoint: http://127.0.0.1:8000/v1/chat/completions
+  models_url: http://127.0.0.1:8000/v1/models
+  timeout_seconds: 180
+
+# Start one model at a time, then pass its ID to load.py with --model.
+# Keeping server lifecycle separate prevents model loading time from entering results.
+models:
+  - id: Qwen/Qwen2.5-0.5B-Instruct
+  - id: Qwen/Qwen2.5-3B-Instruct
+
+benchmark:
+  concurrency: [1, 2, 4, 8, 16]
+  requests_per_scenario: 50
+  warmup_requests: 3
+  max_tokens: 128
+  temperature: 0
+  seed: 1
+  ignore_eos: true
+
+# Keep this prompt set unchanged between model runs. Token counts reported by the
+# server are stored per request, so the baseline can confirm input equivalence.
+prompts:
+  - id: inference-explanation
+    text: >-
+      Explain continuous batching in an LLM inference server. Describe how it
+      differs from static batching, why it improves GPU utilization, and one
+      latency tradeoff an operator should monitor. Give a concise technical
+      answer intended for a software engineer.

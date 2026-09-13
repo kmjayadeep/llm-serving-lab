@@ -1,0 +1,45 @@
+{
+  "created_at": "2026-09-13T20:34:20.100820+00:00",
+  "config": {
+    "server": {
+      "endpoint": "http://127.0.0.1:8000/v1/chat/completions",
+      "models_url": "http://127.0.0.1:8000/v1/models",
+      "timeout_seconds": 180
+    },
+    "models": [
+      {
+        "id": "Qwen/Qwen2.5-0.5B-Instruct"
+      },
+      {
+        "id": "Qwen/Qwen2.5-3B-Instruct"
+      }
+    ],
+    "benchmark": {
+      "concurrency": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "requests_per_scenario": 50,
+      "warmup_requests": 3,
+      "max_tokens": 128,
+      "temperature": 0,
+      "seed": 1,
+      "ignore_eos": true
+    },
+    "prompts": [
+      {
+        "id": "inference-explanation",
+        "text": "Explain continuous batching in an LLM inference server. Describe how it differs from static batching, why it improves GPU utilization, and one latency tradeoff an operator should monitor. Give a concise technical answer intended for a software engineer."
+      }
+    ]
+  },
+  "selected_model": "Qwen/Qwen2.5-3B-Instruct",
+  "available_models": [
+    "Qwen/Qwen2.5-3B-Instruct"
+  ],
+  "python": "3.12.12 (main, Feb  3 2026, 22:51:04) [Clang 21.1.4 ]",
+  "platform": "Linux-6.18.48-x86_64-with-glibc2.42"
+}

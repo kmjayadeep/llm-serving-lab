@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phase 1 · Local vLLM Baseline</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09100f;
+      --panel: #111b19;
+      --panel-2: #162320;
+      --text: #edf7f2;
+      --muted: #91a69e;
+      --grid: #2a3b36;
+      --small: #55d6be;
+      --large: #ffb454;
+      --good: #72df91;
+      --border: rgba(195, 231, 218, .12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 85% -10%, rgba(85, 214, 190, .12), transparent 32rem),
+        radial-gradient(circle at -10% 35%, rgba(255, 180, 84, .08), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 64px 0 80px; }
+    header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; margin-bottom: 34px; }
+    .eyebrow { color: var(--small); font: 700 12px/1.2 ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 8px 0 6px; font-size: clamp(34px, 6vw, 64px); line-height: .98; letter-spacing: -.045em; }
+    header p { margin: 0; color: var(--muted); font-size: 17px; }
+    .stamp { color: var(--muted); text-align: right; font-family: ui-monospace, monospace; white-space: nowrap; }
+
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+    .card, .chart, .details {
+      background: linear-gradient(145deg, rgba(22, 35, 32, .96), rgba(14, 24, 22, .96));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, .18);
+    }
+    .card { padding: 18px 20px; min-height: 120px; }
+    .card .label { color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    .card strong { display: block; margin-top: 9px; font-size: 27px; letter-spacing: -.03em; }
+    .card small { color: var(--muted); }
+    .success { color: var(--good); }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .chart { padding: 22px 20px 16px; min-width: 0; }
+    .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 6px; }
+    h2 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+    .unit { color: var(--muted); font: 12px ui-monospace, monospace; }
+    svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .axis-label, .tick-label { fill: var(--muted); font: 11px ui-monospace, monospace; }
+    .grid-line { stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .series-line { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+    .point { stroke: var(--panel); stroke-width: 2; cursor: crosshair; vector-effect: non-scaling-stroke; }
+    .legend { display: flex; gap: 18px; color: var(--muted); font-size: 12px; }
+    .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
+    .legend .small::before { background: var(--small); }
+    .legend .large::before { background: var(--large); }
+
+    .details { margin-top: 14px; overflow: hidden; }
+    .details-head { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px; border-bottom: 1px solid var(--border); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+    th { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+    th:first-child, td:first-child { text-align: left; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: rgba(255,255,255,.025); }
+    .model-name { display: flex; align-items: center; gap: 9px; font-weight: 650; }
+    .model-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+
+    .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 30px; color: var(--muted); }
+    .notes h2 { color: var(--text); margin-bottom: 8px; }
+    .notes p { margin: 0; }
+    code { color: #bfddd3; font-family: ui-monospace, monospace; }
+    footer { margin-top: 38px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+
+    #tooltip {
+      position: fixed;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: #050908;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      color: var(--text);
+      font: 12px/1.4 ui-monospace, monospace;
+      transform: translate(10px, -50%);
+      transition: opacity .08s;
+    }
+
+    @media (max-width: 820px) {
+      main { padding-top: 36px; }
+      header { grid-template-columns: 1fr; }
+      .stamp { text-align: left; }
+      .cards, .charts { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .cards, .charts, .notes { grid-template-columns: 1fr; }
+      .card { min-height: auto; }
+      .chart { padding-inline: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">LLM Serving Lab · Phase 1</div>
+        <h1>Local inference baseline</h1>
+        <p>Qwen2.5 on vLLM and an AMD Radeon RX 7900 GRE</p>
+      </div>
+      <div class="stamp">2026-09-13<br>ROCm 7.2.1 · FP16</div>
+    </header>
+
+    <section class="cards" aria-label="Benchmark summary">
+      <article class="card"><span class="label">Measured requests</span><strong>500</strong><small>250 per model</small></article>
+      <article class="card"><span class="label">Success rate</span><strong class="success">100%</strong><small>zero request errors</small></article>
+      <article class="card"><span class="label">Peak throughput</span><strong>1,150.2</strong><small>output tokens/s · 0.5B at c16</small></article>
+      <article class="card"><span class="label">Controlled output</span><strong>128</strong><small>tokens per request</small></article>
+    </section>
+
+    <section class="charts">
+      <article class="chart">
+        <div class="chart-head"><h2>Aggregate output throughput</h2><span class="unit">tokens / second</span></div>
+        <div class="legend"><span class="small">Qwen2.5-0.5B</span><span class="large">Qwen2.5-3B</span></div>
+        <svg id="throughput" viewBox="0 0 560 280" role="img" aria-label="Aggregate output throughput by concurrency"></svg>
+      </article>
+      <article class="chart">
+        <div class="chart-head"><h2>Mean time to first token</h2><span class="unit">milliseconds</span></div>
+        <div class="legend"><span class="small">Qwen2.5-0.5B</span><span class="large">Qwen2.5-3B</span></div>
+        <svg id="ttft" viewBox="0 0 560 280" role="img" aria-label="Mean TTFT by concurrency"></svg>
+      </article>
+      <article class="chart">
+        <div class="chart-head"><h2>Mean end-to-end latency</h2><span class="unit">milliseconds</span></div>
+        <div class="legend"><span class="small">Qwen2.5-0.5B</span><span class="large">Qwen2.5-3B</span></div>
+        <svg id="latency" viewBox="0 0 560 280" role="img" aria-label="Mean latency by concurrency"></svg>
+      </article>
+      <article class="chart">
+        <div class="chart-head"><h2>Request throughput</h2><span class="unit">requests / second</span></div>
+        <div class="legend"><span class="small">Qwen2.5-0.5B</span><span class="large">Qwen2.5-3B</span></div>
+        <svg id="requests" viewBox="0 0 560 280" role="img" aria-label="Request throughput by concurrency"></svg>
+      </article>
+    </section>
+
+    <section class="details">
+      <div class="details-head"><h2>Detailed results</h2><span class="unit">50 requests per row</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Model</th><th>Concurrency</th><th>Req/s</th><th>Output tok/s</th><th>Mean TTFT</th><th>P95 TTFT</th><th>Mean latency</th><th>P95 latency</th><th>Errors</th></tr></thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="notes">
+      <div><h2>What stands out</h2><p>The 0.5B model sustains roughly four times the per-request decode rate of the 3B model. Aggregate throughput continues to rise through concurrency 16, but both models show a clear TTFT and latency penalty at that level.</p></div>
+      <div><h2>Method</h2><p>Closed-loop streaming workload with 75 prompt tokens, 128 output tokens, three warm-ups, and 50 measured requests per concurrency. Model startup is excluded. See <code>phase1-baseline.md</code> and the raw JSONL files for details.</p></div>
+    </section>
+
+    <footer>vLLM 0.16 development build · float16 · max model length 2,048 · GPU memory utilization 0.75 · eager execution</footer>
+  </main>
+  <div id="tooltip"></div>
+
+  <script>
+    const models = [
+      {
+        name: "Qwen2.5-0.5B", color: "#55d6be",
+        rows: [
+          {c:1, rps:.809, throughput:103.600, ttft:23.419, p95ttft:24.134, latency:1235.504, p95latency:1247.492},
+          {c:2, rps:1.601, throughput:204.912, ttft:28.288, p95ttft:33.472, latency:1249.287, p95latency:1256.396},
+          {c:4, rps:3.055, throughput:391.079, ttft:31.566, p95ttft:35.070, latency:1259.162, p95latency:1265.666},
+          {c:8, rps:5.617, throughput:718.975, ttft:34.187, p95ttft:37.035, latency:1274.131, p95latency:1279.836},
+          {c:16, rps:8.986, throughput:1150.242, ttft:179.374, p95ttft:503.719, latency:1434.370, p95latency:1749.119}
+        ]
+      },
+      {
+        name: "Qwen2.5-3B", color: "#ffb454",
+        rows: [
+          {c:1, rps:.197, throughput:25.279, ttft:44.296, p95ttft:45.256, latency:5063.465, p95latency:5092.906},
+          {c:2, rps:.408, throughput:52.201, ttft:75.804, p95ttft:78.689, latency:4903.348, p95latency:5010.103},
+          {c:4, rps:.797, throughput:102.021, ttft:77.096, p95ttft:83.023, latency:4822.452, p95latency:4887.272},
+          {c:8, rps:1.457, throughput:186.547, ttft:82.890, p95ttft:89.960, latency:4901.998, p95latency:4911.788},
+          {c:16, rps:2.277, throughput:291.440, ttft:296.528, p95ttft:702.559, latency:5661.576, p95latency:6011.649}
+        ]
+      }
+    ];
+
+    const NS = "http://www.w3.org/2000/svg";
+    const tooltip = document.querySelector("#tooltip");
+    const svgNode = (tag, attrs = {}, text = "") => {
+      const node = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+      if (text) node.textContent = text;
+      return node;
+    };
+
+    function compact(value) {
+      return value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : value.toFixed(value < 10 ? 1 : 0);
+    }
+
+    function drawChart(id, key, unit) {
+      const svg = document.querySelector(`#${id}`);
+      const width = 560, height = 280, left = 54, right = 16, top = 18, bottom = 38;
+      const plotW = width - left - right, plotH = height - top - bottom;
+      const values = models.flatMap(model => model.rows.map(row => row[key]));
+      const rawMax = Math.max(...values);
+      const magnitude = 10 ** Math.floor(Math.log10(rawMax));
+      const yMax = Math.ceil((rawMax * 1.08) / magnitude) * magnitude;
+      const x = index => left + index * plotW / 4;
+      const y = value => top + plotH - value / yMax * plotH;
+
+      for (let i = 0; i <= 4; i++) {
+        const value = yMax * (4 - i) / 4;
+        const yy = top + plotH * i / 4;
+        svg.append(svgNode("line", {x1:left, y1:yy, x2:width-right, y2:yy, class:"grid-line"}));
+        svg.append(svgNode("text", {x:left-9, y:yy+4, "text-anchor":"end", class:"tick-label"}, compact(value)));
+      }
+      [1, 2, 4, 8, 16].forEach((value, index) => {
+        svg.append(svgNode("text", {x:x(index), y:height-12, "text-anchor":"middle", class:"tick-label"}, value));
+      });
+      svg.append(svgNode("text", {x:left+plotW/2, y:height-1, "text-anchor":"middle", class:"axis-label"}, "concurrency"));
+
+      models.forEach(model => {
+        const points = model.rows.map((row, index) => `${x(index)},${y(row[key])}`).join(" ");
+        svg.append(svgNode("polyline", {points, stroke:model.color, class:"series-line"}));
+        model.rows.forEach((row, index) => {
+          const point = svgNode("circle", {cx:x(index), cy:y(row[key]), r:5, fill:model.color, class:"point", tabindex:"0"});
+          const show = event => {
+            tooltip.innerHTML = `<strong>${model.name}</strong><br>c${row.c} · ${row[key].toLocaleString(undefined, {maximumFractionDigits:3})} ${unit}`;
+            const box = event.target.getBoundingClientRect();
+            tooltip.style.left = `${event.clientX || box.left + box.width/2}px`;
+            tooltip.style.top = `${event.clientY || box.top}px`;
+            tooltip.style.opacity = 1;
+          };
+          point.addEventListener("pointerenter", show);
+          point.addEventListener("pointermove", show);
+          point.addEventListener("focus", show);
+          point.addEventListener("pointerleave", () => tooltip.style.opacity = 0);
+          point.addEventListener("blur", () => tooltip.style.opacity = 0);
+          svg.append(point);
+        });
+      });
+    }
+
+    drawChart("throughput", "throughput", "tok/s");
+    drawChart("ttft", "ttft", "ms");
+    drawChart("latency", "latency", "ms");
+    drawChart("requests", "rps", "req/s");
+
+    const tbody = document.querySelector("#results-body");
+    models.forEach(model => model.rows.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><span class="model-name"><i class="model-dot" style="background:${model.color}"></i>${model.name}</span></td>
+        <td>${row.c}</td><td>${row.rps.toFixed(3)}</td><td>${row.throughput.toFixed(3)}</td>
+        <td>${row.ttft.toFixed(3)} ms</td><td>${row.p95ttft.toFixed(3)} ms</td>
+        <td>${row.latency.toFixed(3)} ms</td><td>${row.p95latency.toFixed(3)} ms</td>
+        <td class="success">0%</td>`;
+      tbody.append(tr);
+    }));
+  </script>
+</body>
+</html>
