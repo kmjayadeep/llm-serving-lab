@@ -22,10 +22,11 @@ services:
         --dtype ${DTYPE:-float16}
         --max-model-len ${MAX_MODEL_LEN:-2048}
         --gpu-memory-utilization ${GPU_MEMORY_UTILIZATION:-0.75}
-        --port ${PORT:-8000}
+        --host 127.0.0.1
+        --port 8000
         --enforce-eager
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:${PORT:-8000}/health"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 30

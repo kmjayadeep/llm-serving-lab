@@ -1,44 +1,32 @@
 # References
 
-Last reviewed: 2026-09-12.
-
-These are primary references for the local AMD/vLLM experiment. Version-specific behavior can change, so check the documentation associated with the pinned image before upgrading.
+Last reviewed: 2026-09-13.
 
 ## vLLM
 
-- [vLLM documentation](https://docs.vllm.ai/)
+- [Documentation](https://docs.vllm.ai/)
 - [GPU installation](https://docs.vllm.ai/en/stable/getting_started/installation/gpu/)
 - [Docker deployment](https://docs.vllm.ai/en/stable/deployment/docker/)
 - [OpenAI-compatible server](https://docs.vllm.ai/en/stable/serving/openai_compatible_server/)
-- [vLLM GitHub repository](https://github.com/vllm-project/vllm)
 
-## AMD ROCm and Radeon
+## AMD ROCm
 
-- [AMD: vLLM inference and serving on ROCm](https://rocm.docs.amd.com/projects/ai-ecosystem/en/latest/inference/vllm.html)
-- [AMD Radeon/Ryzen: vLLM Docker image](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/advanced/advancedrad/linux/llm/build-docker-image.html)
-- [Radeon native Linux compatibility](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)
-- [ROCm documentation](https://rocm.docs.amd.com/)
-- [AMD's ROCm vLLM repository](https://github.com/ROCm/vllm)
+- [vLLM on ROCm](https://rocm.docs.amd.com/projects/ai-ecosystem/en/latest/inference/vllm.html)
+- [Radeon vLLM Docker image](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/advanced/advancedrad/linux/llm/build-docker-image.html)
+- [Radeon Linux compatibility](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/compatibility/compatibilityrad/native_linux/native_linux_compatibility.html)
+- [ROCm vLLM repository](https://github.com/ROCm/vllm)
 
-## Chat UI research
+## Current UI and model
 
-- [Awesome Local LLM user interfaces](https://github.com/rafska/Awesome-local-LLM#user-interfaces)
-- [Page Assist OpenAI-compatible provider guide](https://docs.pageassist.xyz/providers/openai)
-- [Open WebUI documentation](https://docs.openwebui.com/)
-- [vLLM guide for Open WebUI](https://docs.vllm.ai/en/latest/deployment/frameworks/open-webui/)
 - [NGINX proxy module](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)
+- [Awesome Local LLM interfaces](https://github.com/rafska/Awesome-local-LLM#user-interfaces)
+- [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct)
 
-## Tested model
+## Planned routing and orchestration
 
-- [Qwen2.5-0.5B-Instruct model card](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct)
-- [Hugging Face Hub documentation](https://huggingface.co/docs/hub/)
-
-Always review a model's license, intended use, limitations, and revision before using it.
-
-## Future topics
-
-These links are bookmarks only. The repository does not yet implement or explain these systems:
-
-- [Kubernetes](https://kubernetes.io/docs/home/)
-- [AMD GPU device plugin for Kubernetes](https://instinct.docs.amd.com/projects/k8s-device-plugin/en/latest/)
-- [llm-d](https://llm-d.ai/docs/)
+- [llm-d no-Kubernetes deployment](https://llm-d.ai/docs/infrastructure/no-kubernetes-deployment)
+- [llm-d multi-model routing](https://llm-d.ai/docs/well-lit-paths/foundations/multi-model-routing)
+- [llm-d CRDs and release artifacts](https://llm-d.ai/docs/api-reference/artifacts)
+- [Gateway API Inference Extension](https://github.com/kubernetes-sigs/gateway-api-inference-extension)
+- [KServe LLMInferenceService](https://kserve.github.io/website/docs/model-serving/generative-inference/llmisvc/llmisvc-overview)
+- [AMD Kubernetes device plugin](https://instinct.docs.amd.com/projects/k8s-device-plugin/en/latest/)

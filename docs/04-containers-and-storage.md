@@ -1,10 +1,8 @@
-# Containers, GPU access, and storage
+# Containers and storage
 
-## Containers do not virtualize the GPU
+## AMD GPU access
 
-A GPU container shares the host kernel. Device nodes are passed into the container, while ROCm user-space libraries live in the image.
-
-For the tested AMD setup:
+The ROCm container needs:
 
 ```yaml
 devices:
@@ -15,66 +13,38 @@ group_add:
 ipc: host
 ```
 
-`/dev/kfd` provides the Kernel Fusion Driver compute interface. `/dev/dri` exposes render nodes. Group and udev permissions determine whether a non-root host user can access them.
+- `/dev/kfd` provides the AMD compute interface.
+- `/dev/dri` exposes render devices.
+- Device permissions depend on host groups and udev rules.
+- Host IPC avoids small default shared-memory limits.
 
-`ipc: host` avoids a small default shared-memory allocation that can constrain ML frameworks. Understand the isolation trade-off before using it in multi-tenant environments.
+Containers use the host kernel and GPU driver; they do not virtualize the GPU.
 
-## Host networking
+## Network
 
-The local Compose setup uses `network_mode: host`, so vLLM's port is directly bound on the host. This is convenient for a trusted workstation but reduces network isolation.
+Both lab containers use host networking:
 
-Never expose an unauthenticated model server to an untrusted network. Add a gateway or proxy that handles TLS, authentication, request limits, and authorization.
-
-## Image layers and working space
-
-Registry layers are compressed for transfer, then extracted into content and snapshot storage. During a pull, disk may temporarily hold compressed blobs and extracted data simultaneously. Containers add writable overlay layers, and build caches consume additional space.
-
-Inspect storage with:
-
-```bash
-df -h /
-docker system df
-docker system df -v
-```
-
-A large AI image may need far more temporary headroom than its displayed download size.
+- vLLM binds to `127.0.0.1:8000`.
+- NGINX binds to `127.0.0.1:3001` and proxies API traffic to vLLM.
 
 ## Model cache
 
-The Compose file mounts:
+The Hugging Face cache is mounted from the host:
 
 ```text
 $HOME/.cache/huggingface → /root/.cache/huggingface
 ```
 
-This prevents repeated model downloads when containers are replaced. It also means:
+Model downloads survive container replacement. The container may create root-owned cache files, so the cleanup script removes a selected model through a temporary container.
 
-- Model files persist independently of the container.
-- Gated models may use a token from the environment.
-- Cache files can be created as root.
-- Model weights can consume substantial host storage.
-
-Do not commit caches or model weights to Git.
-
-## Targeted cleanup
-
-Prefer removing known lab resources:
+## Inspect and clean up
 
 ```bash
+df -h /
+docker system df
 docker compose down
-docker image rm IMAGE_NAME
-rm only the intended model cache
 ```
 
-Use `scripts/cleanup.sh` for this repository.
+Use [`scripts/cleanup.sh`](../scripts/cleanup.sh) to remove this lab's containers, images, and optionally the selected model cache.
 
-Commands such as the following are broad and potentially disruptive:
-
-```bash
-docker system prune -af
-docker volume prune
-```
-
-They can delete unrelated inactive images, build cache, and—depending on flags—volumes. Inspect first and use them only when that scope is intentional.
-
-More advanced storage design is deferred until the local experiment has been repeated and understood.
+Avoid broad cleanup commands when unrelated Docker projects exist. Remove known resources first.

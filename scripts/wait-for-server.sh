@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-port="${PORT:-8000}"
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$repo_root"
+
+port=8000
 timeout="${TIMEOUT_SECONDS:-300}"
 start=$SECONDS
 

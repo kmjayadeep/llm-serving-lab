@@ -1,31 +1,28 @@
-# Guide: local vLLM on an AMD GPU
+# Run vLLM locally with ROCm
 
-This reproduces the successful RX 7900 GRE experiment using Docker Compose.
+## Requirements
 
-## Prerequisites
-
-- Linux host with `amdgpu`
-- Supported AMD GPU/ROCm combination
+- Linux with a compatible AMD GPU and `amdgpu`
 - `/dev/kfd` and `/dev/dri`
-- Docker with Compose v2
-- At least 70–100 GiB free for the tested development image
+- Docker Compose v2
 - `curl` and `jq`
 
-## Procedure
+## 1. Configure
 
 ```bash
 ./scripts/check-amd-gpu.sh
 cp .env.example .env
+$EDITOR .env
 ```
 
-Before selecting `HIP_VISIBLE_DEVICES`, pull the image and inspect devices:
+Verify GPU ordering before choosing `HIP_VISIBLE_DEVICES`:
 
 ```bash
 set -a; source .env; set +a
 ./scripts/verify-rocm-container.sh
 ```
 
-The image pull itself is large. After identifying the discrete GPU index, edit `.env`, then build and start vLLM and the lightweight UI:
+## 2. Start
 
 ```bash
 docker compose up -d --build
@@ -33,66 +30,50 @@ docker compose up -d --build
 ./scripts/test-api.sh
 ```
 
-Open [http://localhost:3001](http://localhost:3001).
+Open the UI at [http://localhost:3001](http://localhost:3001).
 
-Useful checks:
+## 3. Inspect
 
 ```bash
-curl -fsS http://localhost:8000/health
-curl -fsS http://localhost:8000/v1/models | jq .
-curl -fsS http://localhost:3001/
+docker compose ps
 docker compose logs -f vllm ui
+curl -fsS http://localhost:8000/health
+curl -fsS http://localhost:3001/v1/models | jq
+curl -fsS http://localhost:3001/metrics | less
 ```
 
-## Try a custom prompt
+## 4. Stop
+
+Preserve images and model cache:
 
 ```bash
-PROMPT='Explain KV caching in two sentences.' ./scripts/test-api.sh
+docker compose down
+```
+
+Remove lab images and optionally the selected model cache:
+
+```bash
+./scripts/cleanup.sh
 ```
 
 ## Troubleshooting
 
-### No `/dev/kfd`
+### GPU is unavailable
 
-The host driver/ROCm-compatible kernel path is not ready. Docker cannot manufacture this device.
+Confirm `amdgpu`, `/dev/kfd`, render devices, and `video`/`render` group membership. Re-run `scripts/verify-rocm-container.sh`.
 
-### Two AMD devices appear
-
-An APU and discrete GPU may both be visible. Use `HIP_VISIBLE_DEVICES` after verifying device order.
-
-### Permission denied
-
-Check host device ownership and membership in `video`/`render`. Log out and back in after changing group membership.
-
-### Server exits during startup
+### Server exits
 
 ```bash
 docker compose ps -a
 docker compose logs --tail=200 vllm
 ```
 
-Look for unsupported architecture, kernel compilation, out-of-memory, model access, and disk errors.
+Check for unsupported GPU architecture, out-of-memory errors, model access errors, and incompatible kernels.
 
-### No space left on device
-
-```bash
-df -h /
-docker system df -v
-du -sh ~/.cache/huggingface
-```
-
-Do not immediately run a global prune on a machine with other Docker projects. Remove known resources or use `scripts/cleanup.sh`.
-
-## Stop and clean up
-
-Preserve image/cache:
+### UI is unavailable
 
 ```bash
-docker compose down
-```
-
-Targeted full lab cleanup:
-
-```bash
-./scripts/cleanup.sh
+docker compose logs --tail=100 ui
+curl -v http://127.0.0.1:3001/health
 ```

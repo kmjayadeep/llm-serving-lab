@@ -1,80 +1,52 @@
 # Inference fundamentals
 
-## Training versus inference
+## Request lifecycle
 
-Training updates model parameters by computing gradients. Inference keeps parameters fixed and uses them to predict tokens. This lab focuses on inference and serving rather than model training.
+An autoregressive model:
 
-An autoregressive language model repeatedly:
+1. Tokenizes the prompt.
+2. Processes the prompt during **prefill**.
+3. Generates tokens through repeated **decode** steps.
+4. Stops at a stop condition or token limit.
 
-1. Tokenizes input text.
-2. Runs a **prefill** pass over the prompt.
-3. Selects the next token.
-4. Runs repeated **decode** steps, usually one new token per sequence per step.
-5. Stops at a stop token, stop sequence, or configured limit.
+Prefill processes many prompt tokens in parallel. Decode usually produces one token per active sequence per step.
 
-Prefill is comparatively compute-heavy and parallel. Decode repeatedly reads model weights and KV-cache state, so memory bandwidth and scheduling are especially important.
-
-## Parameters, precision, and weight memory
+## Memory
 
 A rough lower bound for weight memory is:
 
 ```text
-number of parameters × bytes per parameter
+parameters × bytes per parameter
 ```
 
-Typical approximations:
-
-| Representation | Approximate bytes/parameter |
+| Representation | Approximate bytes per parameter |
 |---|---:|
 | FP32 | 4 |
 | FP16/BF16 | 2 |
-| INT8 | 1 plus metadata/scales |
-| 4-bit | 0.5 plus metadata/scales |
+| INT8 | 1 plus metadata |
+| 4-bit | 0.5 plus metadata |
 
-A 7B model in FP16 therefore needs roughly 14 GB for weights alone. Real serving also needs runtime workspaces, temporary tensors, framework state, and KV cache.
+Serving also requires runtime memory and a KV cache.
 
-Quantization reduces weight memory and often memory bandwidth, but support and speed depend on the exact accelerator, kernel, model, and quantization format. A format being loadable does not guarantee that it is fast.
+## Context and KV cache
 
-## Tokens and context
+A request's context includes instructions, conversation history, the current prompt, and generated output. `--max-model-len` limits total sequence length.
 
-Models consume tokens rather than characters. A request's context commonly includes:
+The KV cache stores attention state for previous tokens, avoiding repeated computation during decode. Its memory use grows with model shape, token count, active sequences, and datatype.
 
-- System instructions
-- Conversation history
-- Current user prompt
-- Generated output
+## Serving metrics
 
-`--max-model-len` bounds the total sequence length supported by a request. Longer context consumes more KV-cache memory and can reduce concurrency.
+| Metric | Meaning |
+|---|---|
+| TTFT | Time from request arrival to first token |
+| TPOT | Average time per output token after the first |
+| ITL | Delay between output tokens |
+| End-to-end latency | Total request duration |
+| Token throughput | Tokens processed per second |
+| Request throughput | Requests completed per second |
 
-## KV cache
+Use fixed input/output lengths, warm-up requests, and percentiles when comparing serving configurations.
 
-Transformer attention needs keys and values from earlier tokens. During serving, vLLM stores these tensors in a **KV cache** rather than recomputing them for every generated token.
+## Batching
 
-KV-cache size grows with factors including:
-
-- Number of layers
-- Hidden/head dimensions
-- Number of cached tokens
-- Cache datatype
-- Number of active sequences
-
-vLLM's PagedAttention-inspired memory management divides cache into blocks/pages, reducing fragmentation and enabling efficient batching.
-
-## Latency and throughput
-
-Useful serving measurements include:
-
-- **Time to first token (TTFT):** request arrival to first generated token
-- **Inter-token latency (ITL):** delay between generated tokens
-- **Tokens per second:** generation rate
-- **Request throughput:** completed requests per unit time
-- **Goodput:** requests satisfying a service-level objective
-- **Concurrency:** simultaneous active requests
-
-A configuration optimized for single-user latency may differ from one optimized for aggregate throughput.
-
-## Batching and scheduling
-
-Static batching waits for a fixed batch. Continuous or iteration-level batching can insert and remove requests between decode iterations. vLLM uses scheduling and memory management to improve accelerator utilization across requests.
-
-Those are the concepts directly relevant to the first run. Parallelism, orchestration, distributed serving, and platform architecture are intentionally deferred.
+vLLM can combine work from active requests through continuous batching. This improves aggregate utilization, but single-request latency and multi-request throughput should be measured separately.

@@ -1,73 +1,38 @@
-# First vLLM run: RX 7900 GRE
+# First vLLM run on RX 7900 GRE
 
 **Date:** 2026-09-12  
-**Result:** Successful, followed by complete targeted cleanup
+**Result:** Successful
 
-## Goal
+## Environment
 
-Determine whether the desktop's AMD GPU could run vLLM with a very small model and expose a working OpenAI-compatible API.
-
-## Observed hardware
-
-| Component | Observation |
+| Component | Value |
 |---|---|
-| Discrete GPU | AMD Radeon RX 7900 GRE |
+| GPU | AMD Radeon RX 7900 GRE |
 | Architecture | Navi 31, `gfx1100` |
-| Dedicated VRAM | 15.98 GiB reported to PyTorch |
-| Integrated GPU | Ryzen 5 7600X graphics, `gfx1036` |
-| System RAM | 30 GiB usable/reportable |
-| Kernel | Linux 6.18.48 |
-| Driver | `amdgpu` |
-| Compute devices | `/dev/kfd`, `/dev/dri/renderD128`, `/dev/dri/renderD129` |
+| VRAM | 15.98 GiB |
 | Host | NixOS, x86-64 |
+| Kernel driver | `amdgpu` |
+| Compute devices | `/dev/kfd`, `/dev/dri/renderD*` |
+| Image | `rocm/vllm-dev:rocm7.2.1_navi_ubuntu24.04_py3.12_pytorch_2.9_vllm_0.16.0` |
+| Model | `Qwen/Qwen2.5-0.5B-Instruct` |
 
-The host already had Docker and Podman, and the user belonged to `docker`, `podman`, `video`, and `render` groups.
-
-## Image and software
-
-```text
-rocm/vllm-dev:rocm7.2.1_navi_ubuntu24.04_py3.12_pytorch_2.9_vllm_0.16.0
-```
-
-Runtime verification showed:
-
-```text
-PyTorch 2.9.1+gitff65f5b
-HIP 7.2.53211-e1a6bc5663
-0 AMD Radeon RX 7900 GRE       15.98 GiB
-1 AMD Ryzen 5 7600X graphics  15.24 GiB
-```
-
-PyTorch's ROCm backend deliberately uses APIs named `torch.cuda.*`; those names do not imply that an NVIDIA GPU or CUDA runtime was used.
-
-## GPU verification
-
-Inside the container, `rocminfo` identified both AMD agents. PyTorch reported two accelerator devices and successfully selected the discrete card. The server was constrained to it with:
-
-```bash
-HIP_VISIBLE_DEVICES=0
-```
-
-Never assume device numbering on another machine. Run `scripts/verify-rocm-container.sh` first.
+The host exposes a discrete GPU and an integrated AMD GPU. `HIP_VISIBLE_DEVICES=0` selected the RX 7900 GRE after verifying device order with `rocminfo` and PyTorch.
 
 ## Serving configuration
 
 ```text
-Model:                  Qwen/Qwen2.5-0.5B-Instruct
-Model dtype:            FP16
-Maximum model length:   2,048 tokens
-GPU memory utilization: 0.75
-Execution mode:         eager
-API address:            http://0.0.0.0:8000
+dtype=float16
+max_model_len=2048
+gpu_memory_utilization=0.75
+enforce_eager=true
 ```
 
-`--enforce-eager` was selected as a conservative first test. It disables graph capture and compilation optimizations, trading performance for compatibility and simpler startup.
+`--enforce-eager` was used as a compatibility-first setting. It disables graph capture and some optimizations.
 
-## Relevant startup observations
+## Startup observations
 
 ```text
 Resolved architecture: Qwen2ForCausalLM
-Casting torch.bfloat16 to torch.float16
 Using Triton Attention backend
 Model loading took 0.99 GiB memory
 Available KV cache memory: 9.25 GiB
@@ -75,43 +40,35 @@ GPU KV cache size: 808,192 tokens
 Application startup complete
 ```
 
-The model's 2,048-token request limit is distinct from the total number of tokens vLLM can hold across concurrent requests in its KV cache.
+## Verification
 
-## API verification
+The following path completed successfully:
 
-A request to `/v1/chat/completions` produced a valid response. This demonstrated the complete path:
+```text
+HTTP request → vLLM → PyTorch/ROCm → RX 7900 GRE → generated response
+```
 
-1. Host `amdgpu` driver
-2. Docker device passthrough
-3. ROCm/HIP device discovery
-4. PyTorch tensor execution
-5. vLLM model loading and attention backend
-6. HTTP API serving
-7. Token generation
+Device enumeration and server logs established GPU use; generated text alone is not evidence of accelerator use.
 
-The model saying that it ran on a Radeon was not itself proof. Device enumeration and vLLM's runtime logs provided that evidence.
+## Benchmark
 
-## First controlled benchmark
+Five fixed-length requests were measured after one warm-up request. Each used 128 input tokens, 128 output tokens, and concurrency one.
 
-A five-request, fixed-length benchmark at concurrency one measured approximately **103 output tokens/s**, **25 ms mean time to first token**, and **9.6 ms mean time per output token**. This was more representative than vLLM's periodic throughput log, which averages activity within logging windows and can include idle time.
+| Metric | Result |
+|---|---:|
+| Successful requests | 5/5 |
+| Output throughput | 103.22 tokens/s |
+| Mean TTFT | 24.93 ms |
+| Mean TPOT | 9.57 ms |
+| Mean end-to-end latency | 1.24 s |
 
-See [`../artifacts/2026-09-rx7900gre/server-observations.md`](../artifacts/2026-09-rx7900gre/server-observations.md) for the measured values.
+Periodic vLLM throughput logs are not request benchmarks. Fixed lengths, warmups, and latency distributions provide a more useful baseline.
 
-## Cleanup
-
-The following were removed after the test:
-
-- `vllm-test` container
-- ROCm/vLLM development image
-- Qwen 0.5B Hugging Face cache
-- Temporary cleanup image
-
-No vLLM container or image remained after cleanup.
+Full measurements: [server observations](../artifacts/2026-09-rx7900gre/server-observations.md).
 
 ## Conclusions
 
-- The RX 7900 GRE successfully ran this vLLM/ROCm combination.
-- Explicit GPU selection matters because the host also has an AMD iGPU.
-- A 0.5B FP16 model leaves ample VRAM for KV cache and concurrent requests.
-- A slimmer runtime image or larger Docker filesystem is desirable for continued work.
-- Successful execution on this model does not guarantee every quantization kernel, model architecture, or optimized execution mode will work on `gfx1100`.
+- The tested ROCm/vLLM combination works on the RX 7900 GRE.
+- Device selection is required on a host with both discrete and integrated AMD GPUs.
+- The OpenAI-compatible API, streaming responses, and Prometheus metrics work.
+- Results apply to this pinned configuration; other models, kernels, and quantization formats require separate validation.
