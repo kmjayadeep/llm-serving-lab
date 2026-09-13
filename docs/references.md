@@ -20,11 +20,12 @@ These are primary references for the local AMD/vLLM experiment. Version-specific
 - [ROCm documentation](https://rocm.docs.amd.com/)
 - [AMD's ROCm vLLM repository](https://github.com/ROCm/vllm)
 
-## Open WebUI
+## Chat UI research
 
+- [Awesome Local LLM user interfaces](https://github.com/rafska/Awesome-local-LLM#user-interfaces)
+- [Page Assist OpenAI-compatible provider guide](https://docs.pageassist.xyz/providers/openai)
 - [Open WebUI documentation](https://docs.openwebui.com/)
 - [vLLM guide for Open WebUI](https://docs.vllm.ai/en/latest/deployment/frameworks/open-webui/)
-- [Open WebUI GitHub repository](https://github.com/open-webui/open-webui)
 
 ## Tested model
 

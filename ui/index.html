@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>vLLM Lab Chat</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <div>
+          <h1>vLLM Lab Chat</h1>
+          <p>Minimal browser client for the local OpenAI-compatible API</p>
+        </div>
+        <button id="clear" class="secondary" type="button">New chat</button>
+      </header>
+
+      <section class="settings" aria-label="Generation settings">
+        <label>
+          Model
+          <select id="model"></select>
+        </label>
+        <label>
+          Temperature
+          <input id="temperature" type="number" min="0" max="2" step="0.1" value="0.7">
+        </label>
+        <label>
+          Max tokens
+          <input id="max-tokens" type="number" min="1" max="2048" step="1" value="256">
+        </label>
+        <span id="status" role="status">Connecting…</span>
+      </section>
+
+      <section id="messages" class="messages" aria-live="polite">
+        <div class="empty">Send a message to the local model.</div>
+      </section>
+
+      <form id="chat-form">
+        <label class="sr-only" for="prompt">Message</label>
+        <textarea id="prompt" rows="3" placeholder="Ask something…" required></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+
+      <footer id="metrics">No request metrics yet.</footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

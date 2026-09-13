@@ -44,3 +44,21 @@ The reported concurrency is theoretical cache capacity, not a measured throughpu
 | Prompt tokens | 46 |
 | Completion tokens | 20 |
 | Total tokens | 66 |
+
+## Controlled serving benchmark
+
+A later benchmark used one warm-up request followed by five measured requests. Each request had 128 random input tokens and exactly 128 output tokens, with maximum concurrency set to one.
+
+| Metric | Result |
+|---|---:|
+| Successful requests | 5/5 |
+| Benchmark duration | 6.20 s |
+| Output throughput | 103.22 tokens/s |
+| Peak output throughput | 105.00 tokens/s |
+| Mean time to first token | 24.93 ms |
+| Mean time per output token | 9.57 ms |
+| Mean inter-token latency | 9.49 ms |
+| Mean end-to-end latency | 1239.91 ms |
+| P99 end-to-end latency | 1247.67 ms |
+
+This showed that vLLM's periodic idle-window throughput log was not a request-level benchmark. Fixed-length requests, warmups, and latency distributions gave a more useful baseline.

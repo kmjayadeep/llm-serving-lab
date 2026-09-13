@@ -91,6 +91,12 @@ A request to `/v1/chat/completions` produced a valid response. This demonstrated
 
 The model saying that it ran on a Radeon was not itself proof. Device enumeration and vLLM's runtime logs provided that evidence.
 
+## First controlled benchmark
+
+A five-request, fixed-length benchmark at concurrency one measured approximately **103 output tokens/s**, **25 ms mean time to first token**, and **9.6 ms mean time per output token**. This was more representative than vLLM's periodic throughput log, which averages activity within logging windows and can include idle time.
+
+See [`../artifacts/2026-09-rx7900gre/server-observations.md`](../artifacts/2026-09-rx7900gre/server-observations.md) for the measured values.
+
 ## Cleanup
 
 The following were removed after the test:

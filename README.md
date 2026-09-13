@@ -12,7 +12,7 @@ The repository currently documents only the first completed experiment: running 
 - ROCm 7.2.1 and ROCm-enabled PyTorch
 - vLLM serving `Qwen/Qwen2.5-0.5B-Instruct`
 - OpenAI-compatible chat-completions API on port 8000
-- Open WebUI connected to vLLM as a browser-based chat interface
+- A dependency-free browser chat interface with streaming responses
 - Explicit selection of the discrete GPU instead of the integrated AMD GPU
 - Complete cleanup after the experiment
 
@@ -28,16 +28,17 @@ The exact observations are in [`docs/01-rx7900gre-first-vllm-run.md`](docs/01-rx
 │   ├── 02-inference-fundamentals.md
 │   ├── 03-vllm-and-rocm.md
 │   ├── 04-containers-and-storage.md
-│   ├── 05-open-webui.md
+│   ├── 05-lightweight-chat-ui.md
 │   └── references.md
 ├── guides/
 │   └── local-rocm-vllm.md      # Procedure for repeating the experiment
-├── scripts/                    # Host checks, verification, API test, and cleanup
-├── compose.yaml                # vLLM and Open WebUI services
+├── scripts/                    # Host checks, API tests, UI server, and cleanup
+├── ui/                         # Dependency-free local chat page
+├── compose.yaml                # vLLM service
 └── .env.example                # Local experiment settings
 ```
 
-The Compose workflow has been used to run both vLLM and Open WebUI successfully.
+The Compose workflow runs vLLM; a small host-side HTTP server serves the static chat page.
 
 ## Read slowly
 
@@ -47,7 +48,7 @@ Use this order:
 2. [`docs/02-inference-fundamentals.md`](docs/02-inference-fundamentals.md) — only the concepts seen in that run
 3. [`docs/03-vllm-and-rocm.md`](docs/03-vllm-and-rocm.md) — how the AMD software stack fits together
 4. [`docs/04-containers-and-storage.md`](docs/04-containers-and-storage.md) — what Docker provided
-5. [`docs/05-open-webui.md`](docs/05-open-webui.md) — how the chat interface connects
+5. [`docs/05-lightweight-chat-ui.md`](docs/05-lightweight-chat-ui.md) — how the chat interface connects
 6. [`guides/local-rocm-vllm.md`](guides/local-rocm-vllm.md) — how to repeat it
 7. [`docs/references.md`](docs/references.md) — primary sources
 
@@ -75,7 +76,7 @@ docker compose pull
 ./scripts/verify-rocm-container.sh
 ```
 
-Start vLLM and Open WebUI, then test the API:
+Start vLLM and test the API:
 
 ```bash
 docker compose up -d
@@ -83,7 +84,13 @@ docker compose up -d
 ./scripts/test-api.sh
 ```
 
-Open the chat interface at [http://localhost:3000](http://localhost:3000). The first local account becomes the administrator.
+In another terminal, start the lightweight UI:
+
+```bash
+./scripts/serve-ui.sh
+```
+
+Open [http://localhost:3000](http://localhost:3000).
 
 View logs:
 
@@ -104,8 +111,9 @@ Use [`scripts/cleanup.sh`](scripts/cleanup.sh) for targeted cleanup of this lab'
 These are intentionally only TODOs. They should be added one at a time after the current local setup is understood and reproduced.
 
 - [x] Re-run and document the Compose workflow
-- [x] Add a browser chat interface with Open WebUI
-- [ ] Learn how to measure one request's latency and tokens per second
+- [x] Try Open WebUI and identify which features are unnecessary for this lab
+- [x] Replace it with a dependency-free browser chat interface
+- [x] Measure one request's latency and tokens per second
 - [ ] Compare the 0.5B model with one slightly larger model
 - [ ] Learn basic concurrent-request behavior
 - [ ] Add a minimal benchmark script after the measurements are understood

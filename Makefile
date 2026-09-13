@@ -1,4 +1,4 @@
-.PHONY: check verify pull up wait test logs down cleanup
+.PHONY: check verify pull up wait test ui logs down cleanup
 
 check:
 	./scripts/check-amd-gpu.sh
@@ -17,6 +17,9 @@ wait:
 
 test:
 	./scripts/test-api.sh
+
+ui:
+	./scripts/serve-ui.sh
 
 logs:
 	docker compose logs -f vllm
