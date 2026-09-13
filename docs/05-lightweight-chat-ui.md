@@ -19,10 +19,12 @@ For now, the repository uses a small static HTML, CSS, and JavaScript client. Re
 ## Architecture
 
 ```text
-Browser :3000 → vLLM :8000 → Qwen model → Radeon GPU
+Browser :3001 → vLLM :8000 → Qwen model → Radeon GPU
 ```
 
 The UI has no backend, database, accounts, or additional container. Python only serves its static files. The browser sends requests directly to vLLM.
+
+Port 3001 is used because the earlier Open WebUI experiment registered browser data on port 3000. A different origin avoids stale Open WebUI cache or service-worker behavior.
 
 ## Start
 
@@ -39,7 +41,7 @@ In a separate terminal, serve the UI:
 ./scripts/serve-ui.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001).
 
 ## Current features
 

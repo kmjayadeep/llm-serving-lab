@@ -90,7 +90,7 @@ In another terminal, start the lightweight UI:
 ./scripts/serve-ui.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001).
 
 View logs:
 

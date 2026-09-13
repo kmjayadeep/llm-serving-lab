@@ -39,14 +39,14 @@ In a separate terminal, serve the lightweight chat page:
 ./scripts/serve-ui.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001).
 
 Useful checks:
 
 ```bash
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:8000/v1/models | jq .
-curl -fsS http://localhost:3000/
+curl -fsS http://localhost:3001/
 docker compose logs -f vllm
 ```
 
