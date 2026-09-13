@@ -19,7 +19,7 @@ test:
 	./scripts/test-api.sh
 
 ui:
-	./scripts/serve-ui.sh
+	docker compose up -d --build ui
 
 logs:
 	docker compose logs -f vllm

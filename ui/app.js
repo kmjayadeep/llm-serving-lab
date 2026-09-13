@@ -1,4 +1,4 @@
-const API = "http://127.0.0.1:8000/v1";
+const API = "/v1";
 const messages = [];
 
 const elements = {
@@ -70,7 +70,7 @@ function renderServerMetrics(snapshot) {
 }
 
 async function fetchServerMetrics(render = true) {
-  const response = await fetch("http://127.0.0.1:8000/metrics");
+  const response = await fetch("/metrics");
   if (!response.ok) throw new Error(`Metrics HTTP ${response.status}`);
   const samples = parsePrometheus(await response.text());
   const snapshot = {

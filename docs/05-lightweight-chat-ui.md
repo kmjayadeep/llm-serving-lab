@@ -19,26 +19,34 @@ For now, the repository uses a small static HTML, CSS, and JavaScript client. Re
 ## Architecture
 
 ```text
-Browser :3001 → vLLM :8000 → Qwen model → Radeon GPU
+Browser → NGINX UI/proxy :3001 → vLLM :8000 → Qwen model → Radeon GPU
 ```
 
-The UI has no backend, database, accounts, or additional container. Python only serves its static files. The browser sends requests directly to vLLM.
+The UI has no application backend, database, accounts, or JavaScript framework. A small NGINX Alpine container serves its static files and forwards `/v1` and `/metrics` to vLLM. The browser therefore uses one origin and does not need direct cross-origin access to port 8000. The built UI image measured approximately 26 MB.
+
+## What the proxy adds
+
+The browser now requests relative paths from NGINX:
+
+```text
+GET  /metrics
+GET  /v1/models
+POST /v1/chat/completions
+```
+
+NGINX separates the client-facing endpoint from the model-server endpoint. Its `proxy_buffering off` setting is important: buffering could delay streamed tokens instead of forwarding them as they arrive. Extended read/send timeouts allow longer generations.
+
+This is the repository's first simple routing layer. It has one fixed upstream and does not yet perform load balancing or inference-aware routing.
 
 Port 3001 is used because the earlier Open WebUI experiment registered browser data on port 3000. A different origin avoids stale Open WebUI cache or service-worker behavior.
 
 ## Start
 
-Start vLLM:
+Build and start vLLM and the UI:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ./scripts/wait-for-server.sh
-```
-
-In a separate terminal, serve the UI:
-
-```bash
-./scripts/serve-ui.sh
 ```
 
 Open [http://localhost:3001](http://localhost:3001).
@@ -75,4 +83,4 @@ The UI metrics are useful for interactive observation, not rigorous benchmarking
 
 ## Security scope
 
-The static server binds only to `127.0.0.1`. This remains a local learning interface and should not be exposed directly to an untrusted network.
+The NGINX container uses host networking but binds only to `127.0.0.1:3001`. This remains a local learning interface and should not be exposed to an untrusted network.

@@ -25,18 +25,12 @@ set -a; source .env; set +a
 ./scripts/verify-rocm-container.sh
 ```
 
-The image pull itself is large. After identifying the discrete GPU index, edit `.env`, then start vLLM:
+The image pull itself is large. After identifying the discrete GPU index, edit `.env`, then build and start vLLM and the lightweight UI:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ./scripts/wait-for-server.sh
 ./scripts/test-api.sh
-```
-
-In a separate terminal, serve the lightweight chat page:
-
-```bash
-./scripts/serve-ui.sh
 ```
 
 Open [http://localhost:3001](http://localhost:3001).
@@ -47,7 +41,7 @@ Useful checks:
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:8000/v1/models | jq .
 curl -fsS http://localhost:3001/
-docker compose logs -f vllm
+docker compose logs -f vllm ui
 ```
 
 ## Try a custom prompt

@@ -32,13 +32,14 @@ The exact observations are in [`docs/01-rx7900gre-first-vllm-run.md`](docs/01-rx
 │   └── references.md
 ├── guides/
 │   └── local-rocm-vllm.md      # Procedure for repeating the experiment
-├── scripts/                    # Host checks, API tests, UI server, and cleanup
-├── ui/                         # Dependency-free local chat page
-├── compose.yaml                # vLLM service
+├── scripts/                    # Host checks, API tests, and cleanup
+├── ui/                         # Static chat page and NGINX configuration
+├── Dockerfile.ui               # Lightweight UI/proxy image
+├── compose.yaml                # vLLM and UI services
 └── .env.example                # Local experiment settings
 ```
 
-The Compose workflow runs vLLM; a small host-side HTTP server serves the static chat page.
+Docker Compose runs vLLM plus a small NGINX container that serves the static UI and proxies its API requests to vLLM.
 
 ## Read slowly
 
@@ -76,18 +77,12 @@ docker compose pull
 ./scripts/verify-rocm-container.sh
 ```
 
-Start vLLM and test the API:
+Build and start vLLM and the lightweight UI, then test the API:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ./scripts/wait-for-server.sh
 ./scripts/test-api.sh
-```
-
-In another terminal, start the lightweight UI:
-
-```bash
-./scripts/serve-ui.sh
 ```
 
 Open [http://localhost:3001](http://localhost:3001).

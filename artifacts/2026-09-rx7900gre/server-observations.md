@@ -62,3 +62,17 @@ A later benchmark used one warm-up request followed by five measured requests. E
 | P99 end-to-end latency | 1247.67 ms |
 
 This showed that vLLM's periodic idle-window throughput log was not a request-level benchmark. Fixed-length requests, warmups, and latency distributions gave a more useful baseline.
+
+## Lightweight UI and proxy
+
+A static browser client was packaged in a local NGINX Alpine image:
+
+| Observation | Result |
+|---|---|
+| Built image size | Approximately 26 MB |
+| UI health | `GET /health` returned `200` |
+| Model discovery | Proxied `/v1/models` returned the Qwen model |
+| Metrics | Proxied `/metrics` returned vLLM metrics |
+| Browser test | Model selector populated and server metrics rendered |
+
+NGINX serves the page on `127.0.0.1:3001` and proxies API traffic to vLLM on port 8000. Streaming proxy buffering is disabled.

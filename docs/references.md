@@ -26,6 +26,7 @@ These are primary references for the local AMD/vLLM experiment. Version-specific
 - [Page Assist OpenAI-compatible provider guide](https://docs.pageassist.xyz/providers/openai)
 - [Open WebUI documentation](https://docs.openwebui.com/)
 - [vLLM guide for Open WebUI](https://docs.vllm.ai/en/latest/deployment/frameworks/open-webui/)
+- [NGINX proxy module](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)
 
 ## Tested model
 

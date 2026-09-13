@@ -31,3 +31,20 @@ services:
       retries: 30
       start_period: 60s
     restart: "no"
+
+  ui:
+    image: ${UI_IMAGE:-vllm-lab-ui:local}
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: vllm-lab-ui
+    depends_on:
+      vllm:
+        condition: service_healthy
+    network_mode: host
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: "no"
