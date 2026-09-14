@@ -1,0 +1,41 @@
+# Based on the basic DaemonSet from github.com/ROCm/k8s-device-plugin.
+# This host exposes both the RX 7900 GRE and its integrated Raphael GPU.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: amdgpu-device-plugin
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: amdgpu-device-plugin
+  template:
+    metadata:
+      labels:
+        app: amdgpu-device-plugin
+    spec:
+      priorityClassName: system-node-critical
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: device-plugin
+          image: rocm/k8s-device-plugin@sha256:e2b8f0b8ef5a7a8edc46133dd8d3c54d25cf67de2513a3ce3232107f6efed6f7
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: device-plugins
+              mountPath: /var/lib/kubelet/device-plugins
+            - name: sys
+              mountPath: /sys
+      volumes:
+        - name: device-plugins
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: sys
+          hostPath:
+            path: /sys

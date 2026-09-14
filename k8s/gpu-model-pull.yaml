@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pull-qwen-model
+  namespace: llm-serving-gpu-lab
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: pull-model
+          image: ollama/ollama:rocm@sha256:36a99c0aaa4d28d0fc84969124bcf2f3d1ba8ab89181e2bd33bbc12f6ac2c4ce
+          imagePullPolicy: IfNotPresent
+          command: ["ollama"]
+          args: ["pull", "qwen2.5:0.5b"]
+          env:
+            - name: OLLAMA_HOST
+              value: http://ollama:11434

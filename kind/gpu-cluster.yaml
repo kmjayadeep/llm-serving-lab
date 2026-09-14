@@ -1,0 +1,14 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: llm-serving-gpu-lab
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: /dev/kfd
+        containerPath: /dev/kfd
+      - hostPath: /dev/dri
+        containerPath: /dev/dri
+    extraPortMappings:
+      - containerPort: 30434
+        hostPort: 11434
+        protocol: TCP

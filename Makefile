@@ -1,4 +1,4 @@
-.PHONY: check verify pull up wait test ui logs down cleanup kind-up kind-test kind-down
+.PHONY: check verify pull up wait test ui logs down cleanup kind-up kind-test kind-down kind-gpu-up kind-gpu-test kind-gpu-down
 
 check:
 	./scripts/check-amd-gpu.sh
@@ -38,3 +38,12 @@ kind-test:
 
 kind-down:
 	kind delete cluster --name llm-serving-lab
+
+kind-gpu-up:
+	./scripts/kind-gpu-up.sh
+
+kind-gpu-test:
+	./scripts/test-kind-gpu.sh
+
+kind-gpu-down:
+	kind delete cluster --name llm-serving-gpu-lab

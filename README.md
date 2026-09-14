@@ -43,6 +43,7 @@ Start with:
 7. [References](docs/references.md)
 8. [Local vLLM benchmark](bench/README.md)
 9. [Kubernetes with kind](docs/06-kubernetes-with-kind.md)
+10. [GPU inference with kind](docs/07-gpu-inference-with-kind.md)
 
 ## Run
 
@@ -85,6 +86,18 @@ The kind workload exercises a Deployment, Service, ConfigMap, persistent
 storage, all three probe types, Pod replacement, failed startup, and a rolling
 update. See [Kubernetes with kind](docs/06-kubernetes-with-kind.md).
 
+Run the separate AMD GPU experiment:
+
+```bash
+make kind-gpu-up
+make kind-gpu-test
+make kind-gpu-down
+```
+
+This passes the host GPU into kind, installs the AMD device plugin, and runs
+`qwen2.5:0.5b` with Ollama on the RX 7900 GRE. See
+[GPU inference with kind](docs/07-gpu-inference-with-kind.md).
+
 ## Observed baseline
 
 Five requests with 128 input and 128 output tokens at concurrency one:
@@ -105,6 +118,7 @@ or open the [interactive visualization](artifacts/2026-09-rx7900gre/phase1-basel
 ## Next steps
 
 - [x] Validate the Kubernetes deployment model locally with kind
+- [x] Run a lightweight GPU inference workload inside kind
 - [ ] Put llm-d Envoy and EPP in front of the existing vLLM worker
 - [ ] Explore file-based endpoint discovery without Kubernetes
 - [ ] Run more than one worker and inspect routing decisions
