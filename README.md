@@ -24,7 +24,9 @@ Browser → NGINX :3001 → vLLM :8000 → ROCm → GPU
 ├── artifacts/                  # Results from completed experiments
 ├── docs/                       # Short concept and experiment notes
 ├── guides/local-rocm-vllm.md  # Reproduction guide
-├── scripts/                    # Checks, API test, and cleanup
+├── kind/                       # Local Kubernetes cluster definition
+├── k8s/                        # Kubernetes workload manifests
+├── scripts/                    # Checks, API tests, and lifecycle helpers
 ├── ui/                         # Static chat UI and NGINX config
 ├── compose.yaml
 └── Dockerfile.ui
@@ -40,6 +42,7 @@ Start with:
 6. [Local reproduction guide](guides/local-rocm-vllm.md)
 7. [References](docs/references.md)
 8. [Local vLLM benchmark](bench/README.md)
+9. [Kubernetes with kind](docs/06-kubernetes-with-kind.md)
 
 ## Run
 
@@ -67,6 +70,21 @@ Targeted cleanup:
 ./scripts/cleanup.sh
 ```
 
+## Kubernetes Phase 2
+
+Run the CPU-only Kubernetes experiment without affecting the current kubectl
+context:
+
+```bash
+make kind-up
+make kind-test
+make kind-down
+```
+
+The kind workload exercises a Deployment, Service, ConfigMap, persistent
+storage, all three probe types, Pod replacement, failed startup, and a rolling
+update. See [Kubernetes with kind](docs/06-kubernetes-with-kind.md).
+
 ## Observed baseline
 
 Five requests with 128 input and 128 output tokens at concurrency one:
@@ -86,6 +104,7 @@ or open the [interactive visualization](artifacts/2026-09-rx7900gre/phase1-basel
 
 ## Next steps
 
+- [x] Validate the Kubernetes deployment model locally with kind
 - [ ] Put llm-d Envoy and EPP in front of the existing vLLM worker
 - [ ] Explore file-based endpoint discovery without Kubernetes
 - [ ] Run more than one worker and inspect routing decisions
