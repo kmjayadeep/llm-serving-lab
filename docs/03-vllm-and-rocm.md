@@ -3,24 +3,13 @@
 ## Stack
 
 ```text
-vLLM
-  ↓
-PyTorch and inference kernels
-  ↓
-HIP/ROCm user-space libraries
-  ↓
-Linux KFD/DRM interfaces
-  ↓
-amdgpu kernel driver
-  ↓
-AMD GPU
+vLLM -> PyTorch/kernels -> ROCm -> /dev/kfd + /dev/dri -> amdgpu -> GPU
 ```
 
-The host provides the kernel driver and device files. The container provides the compatible ROCm, PyTorch, and vLLM user space.
+The host supplies the kernel driver and device files. The container supplies the
+matching ROCm, PyTorch, and vLLM user space.
 
-## PyTorch device API
-
-ROCm builds use much of PyTorch's existing `torch.cuda` API. Confirm ROCm with `torch.version.hip`:
+ROCm builds retain PyTorch's `torch.cuda` API:
 
 ```python
 import torch
@@ -29,39 +18,24 @@ print(torch.cuda.is_available())
 print(torch.cuda.get_device_name(0))
 ```
 
-## Device selection
+## Reproducible validation order
 
-This host exposes an RX 7900 GRE and a Ryzen integrated GPU. Verify ordering before setting:
+1. Check that `amdgpu` owns the PCI device.
+2. Check `/dev/kfd` and `/dev/dri/renderD*`.
+3. Run `rocminfo` and PyTorch inside the image.
+4. Select the verified GPU with `HIP_VISIBLE_DEVICES`.
+5. Start a small model and check `/health` and `/v1/models`.
+6. Generate text, inspect GPU logs, then benchmark.
 
-```bash
-HIP_VISIBLE_DEVICES=0
-```
+## Important vLLM flags
 
-Use [`scripts/verify-rocm-container.sh`](../scripts/verify-rocm-container.sh) to inspect devices inside the selected image.
-
-## Relevant vLLM options
-
-| Option | Purpose |
+| Flag | Why |
 |---|---|
-| `--dtype float16` | Use FP16 model tensors where applicable |
-| `--max-model-len 2048` | Limit tokens per sequence |
-| `--gpu-memory-utilization 0.75` | Set vLLM's target fraction of visible GPU memory |
-| `--enforce-eager` | Disable graph capture and compilation optimizations |
-| `--served-model-name` | Set the model name exposed through the API |
+| `--dtype float16` | FP16 tensors |
+| `--max-model-len 2048` | Bound sequence and KV-cache use |
+| `--gpu-memory-utilization 0.75` | Leave VRAM headroom |
+| `--enforce-eager` | Compatibility-first execution |
+| `--served-model-name` | Stable API model name |
 
-Check `vllm serve --help` for the pinned image because the CLI changes over time.
-
-## Validation order
-
-1. Confirm `amdgpu` owns the PCI device.
-2. Confirm `/dev/kfd` and `/dev/dri/renderD*` exist.
-3. Run `rocminfo` inside the container.
-4. Confirm ROCm PyTorch sees the intended GPU.
-5. Start a small model.
-6. Check `/health` and `/v1/models`.
-7. Send a generation request.
-8. Run a controlled benchmark.
-
-## Scope
-
-Successful execution on `gfx1100` does not guarantee support for every model architecture, quantization format, attention kernel, or optimized execution mode. Pin versions and validate changes independently.
+Pin the image. A working `gfx1100` setup does not guarantee every model,
+quantization, kernel, or newer release will work.

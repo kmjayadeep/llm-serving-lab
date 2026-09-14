@@ -1,79 +1,52 @@
 # Run vLLM locally with ROCm
 
-## Requirements
+Requirements: Linux, `amdgpu`, `/dev/kfd`, `/dev/dri`, Docker Compose, curl,
+and jq.
 
-- Linux with a compatible AMD GPU and `amdgpu`
-- `/dev/kfd` and `/dev/dri`
-- Docker Compose v2
-- `curl` and `jq`
-
-## 1. Configure
+## Reproduce
 
 ```bash
-./scripts/check-amd-gpu.sh
 cp .env.example .env
-$EDITOR .env
-```
-
-Verify GPU ordering before choosing `HIP_VISIBLE_DEVICES`:
-
-```bash
-set -a; source .env; set +a
+./scripts/check-amd-gpu.sh
 ./scripts/verify-rocm-container.sh
-```
 
-## 2. Start
-
-```bash
 docker compose up -d --build
 ./scripts/wait-for-server.sh
 ./scripts/test-api.sh
 ```
 
-Open the UI at [http://localhost:3001](http://localhost:3001).
+Open <http://localhost:3001>.
 
-## 3. Inspect
+The equivalent checks without helper scripts are:
 
 ```bash
+ls -l /dev/kfd /dev/dri/renderD*
 docker compose ps
-docker compose logs -f vllm ui
+docker compose logs --tail=100 vllm
 curl -fsS http://localhost:8000/health
 curl -fsS http://localhost:3001/v1/models | jq
-curl -fsS http://localhost:3001/metrics | less
 ```
 
-## 4. Stop
+## Configuration to verify
 
-Preserve images and model cache:
-
-```bash
-docker compose down
+```text
+VLLM_IMAGE=<pinned ROCm image>
+MODEL_ID=Qwen/Qwen2.5-0.5B-Instruct
+HIP_VISIBLE_DEVICES=0   # only after checking device order
+DTYPE=float16
+MAX_MODEL_LEN=2048
+GPU_MEMORY_UTILIZATION=0.75
 ```
 
-Remove lab images and optionally the selected model cache:
+## If startup fails
+
+1. Confirm `amdgpu`, `/dev/kfd`, and `/dev/dri/renderD*`.
+2. Confirm PyTorch in the image sees the intended GPU.
+3. Check disk space, VRAM, model access, and container logs.
+4. Keep the known image/model combination before changing one variable at a
+   time.
 
 ```bash
-./scripts/cleanup.sh
-```
-
-## Troubleshooting
-
-### GPU is unavailable
-
-Confirm `amdgpu`, `/dev/kfd`, render devices, and `video`/`render` group membership. Re-run `scripts/verify-rocm-container.sh`.
-
-### Server exits
-
-```bash
-docker compose ps -a
-docker compose logs --tail=200 vllm
-```
-
-Check for unsupported GPU architecture, out-of-memory errors, model access errors, and incompatible kernels.
-
-### UI is unavailable
-
-```bash
-docker compose logs --tail=100 ui
-curl -v http://127.0.0.1:3001/health
+docker compose down             # keep image and model cache
+./scripts/cleanup.sh            # targeted image/cache cleanup
 ```

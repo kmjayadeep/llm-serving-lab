@@ -1,50 +1,40 @@
 # Containers and storage
 
-## AMD GPU access
-
-The ROCm container needs:
+## GPU passthrough
 
 ```yaml
 devices:
   - /dev/kfd:/dev/kfd
   - /dev/dri:/dev/dri
-group_add:
-  - video
+group_add: [video]
 ipc: host
 ```
 
-- `/dev/kfd` provides the AMD compute interface.
-- `/dev/dri` exposes render devices.
-- Device permissions depend on host groups and udev rules.
-- Host IPC avoids small default shared-memory limits.
+- `/dev/kfd`: AMD compute interface.
+- `/dev/dri`: render devices.
+- Host IPC avoids a small container shared-memory limit.
+- The container shares the host kernel; it does not virtualize the GPU.
 
-Containers use the host kernel and GPU driver; they do not virtualize the GPU.
+## Network and cache
 
-## Network
-
-Both lab containers use host networking:
-
-- vLLM binds to `127.0.0.1:8000`.
-- NGINX binds to `127.0.0.1:3001` and proxies API traffic to vLLM.
-
-## Model cache
-
-The Hugging Face cache is mounted from the host:
+This lab uses host networking:
 
 ```text
-$HOME/.cache/huggingface → /root/.cache/huggingface
+browser :3001 -> NGINX -> vLLM :8000
 ```
 
-Model downloads survive container replacement. The container may create root-owned cache files, so the cleanup script removes a selected model through a temporary container.
+The host Hugging Face cache is mounted at `/root/.cache/huggingface`, so models
+survive container replacement. Watch ownership and disk usage.
 
-## Inspect and clean up
+## Useful checks
 
 ```bash
-df -h /
+docker compose ps
+docker compose logs -f vllm ui
 docker system df
+df -h /
 docker compose down
 ```
 
-Use [`scripts/cleanup.sh`](../scripts/cleanup.sh) to remove this lab's containers, images, and optionally the selected model cache.
-
-Avoid broad cleanup commands when unrelated Docker projects exist. Remove known resources first.
+Prefer targeted cleanup over `docker system prune` when Docker hosts other
+projects.
